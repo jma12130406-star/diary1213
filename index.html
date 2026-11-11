@@ -112,6 +112,69 @@ button{cursor:pointer}
 .memo-pal button.on{box-shadow:0 0 0 2px #2b2a26}
 .memo-pal label{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#2b2a26;margin-left:auto}
 .memo-pal input[type=color]{width:26px;height:22px;border:0;padding:0;background:transparent}
+/* TODAY card */
+.today-card{position:relative;background:var(--paper);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px 16px;margin:4px 0 22px;border-top:4px solid var(--navy)}
+.today-card.folded{padding-bottom:12px}
+.today-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.today-title{font-family:var(--f-head);font-weight:700;font-size:15px;letter-spacing:.1em;color:var(--navy)}
+.today-date{font-size:13px;font-weight:600}
+.today-sum{font-size:11.5px;color:var(--ink-2);margin-left:auto;padding-right:14px}
+.today-flags{display:flex;gap:6px;margin-top:6px}
+.today-sec{margin-top:10px}
+.today-lbl{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--ink-3);margin-bottom:3px}
+.today-row{display:flex;align-items:center;gap:6px;width:100%;border:0;background:transparent;text-align:left;padding:4px 4px;border-radius:6px;font-size:12.5px;color:var(--ink);min-width:0}
+.today-row:hover{background:var(--paper-2)}
+.today-row .tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.today-row .tm{font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.today-row .st{font-size:10px;width:12px;text-align:center}
+.today-row .ck{font-size:14px;color:var(--ink-2);width:14px}
+.today-row.done .ck{color:var(--red)} .today-row.done .tt{color:var(--ink-3)}
+.today-row .dd{font-size:11px;font-weight:700;color:var(--red);min-width:28px;font-variant-numeric:tabular-nums}
+.today-empty{font-size:12px;color:var(--ink-3);padding:2px 4px}
+.today-card .memo-fold{--mc:var(--paper);border-radius:0 0 12px 0}
+/* A. diary daily page */
+.today-card.daily{border-top:0;border-radius:6px 12px 12px 6px;padding:14px 16px 18px 20px;position:relative}
+.today-card.daily::before{content:"";position:absolute;left:8px;top:14px;bottom:14px;width:2px;border-left:1.5px dashed var(--rule)}
+.dp-head{display:flex;align-items:flex-end;gap:10px;padding-bottom:8px;border-bottom:1.5px solid var(--navy)}
+.dp-num{font-family:var(--f-head);font-size:46px;font-weight:700;line-height:.82;color:var(--ink);font-variant-numeric:lining-nums}
+.dp-num.red{color:var(--red)}
+.dp-dow{display:flex;flex-direction:column;line-height:1.3;padding-bottom:1px}
+.dp-dow b{font-size:13.5px;font-weight:600}
+.dp-dow span{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.dp-prog{margin-left:auto;font-size:12px;color:var(--ink-3);padding-bottom:2px;font-variant-numeric:tabular-nums}
+.dp-prog b{font-size:15px;color:var(--ink);font-weight:600}
+.dp-flags{display:flex;gap:6px;margin-top:6px}
+.dp-lines{margin-top:2px;background-image:linear-gradient(transparent 27px,var(--line) 27px);background-size:100% 28px}
+.dp-row{display:flex;align-items:center;gap:8px;width:100%;height:28px;border:0;background:transparent;text-align:left;padding:0 2px;font-size:13px;color:var(--ink);min-width:0;border-radius:4px}
+button.dp-row:hover{background:var(--paper-2)}
+.dp-time{flex:none;width:38px;font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.dp-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dp-row.is-done .dp-t{color:var(--ink-3)}
+.dp-row.is-cancel .dp-t{color:var(--ink-3);text-decoration:line-through}
+.dp-cut{height:10px;border-bottom:1.5px dashed var(--rule);margin:0 0 4px;background:var(--paper)}
+.dp-ck{flex:none;width:16px;font-size:15px;color:var(--ink-2);text-align:center}
+.dp-todo.done .dp-ck{color:var(--red)}
+.dp-todo.done .dp-t{color:var(--ink-3);text-decoration:line-through}
+.dp-todo.moved .dp-ck{color:var(--navy)}
+.dp-empty{color:var(--ink-3);font-size:12px}
+.dp-soon{margin-top:10px;display:flex;flex-direction:column;gap:2px}
+.dp-soon-row{display:flex;gap:8px;align-items:center;border:0;background:transparent;padding:2px;text-align:left;font-size:12px;color:var(--ink-2);border-radius:4px;min-width:0}
+.dp-soon-row:hover{background:var(--paper-2)}
+.dp-dd{flex:none;min-width:30px;font-weight:700;color:var(--red);font-variant-numeric:tabular-nums;font-size:11.5px}
+.dp-sum{font-size:12px;color:var(--ink-2);margin-top:8px;padding-right:16px}/* search */
+.searchbox{flex:0 1 220px;min-width:140px}
+.searchbox input{width:100%;border:1px solid var(--line);background:var(--paper);border-radius:99px;padding:7px 14px;font-size:13px}
+.search-res{display:flex;flex-direction:column;gap:2px;max-height:60vh;overflow:auto;margin-bottom:6px}
+.sr-g{font-size:11.5px;font-weight:700;color:var(--ink-3);letter-spacing:.06em;margin:10px 0 2px}
+.sr-row{display:flex;flex-direction:column;gap:2px;text-align:left;border:0;background:transparent;border-radius:8px;padding:7px 9px;color:var(--ink)}
+.sr-row:hover{background:var(--paper-2)}
+.sr-t{font-size:13.5px;font-weight:600}
+.sr-s{font-size:11.5px;color:var(--ink-3)}
+.sr-n{font-size:12px;color:var(--ink-2)}
+mark{background:var(--today);color:inherit;border-radius:3px;padding:0 1px}
+.flash{animation:flash 1.6s ease}
+@keyframes flash{0%,60%{box-shadow:0 0 0 3px var(--navy)}100%{box-shadow:none}}
+.dr-act{display:flex;gap:6px;justify-content:flex-end}
 .memo-empty{font-size:12.5px;color:var(--ink-2);border:1.5px dashed var(--line);border-radius:10px;padding:14px;text-align:center;line-height:1.6}
 @media (max-width:1180px){.shell{grid-template-columns:minmax(0,1fr) 240px;gap:18px}}
 @media (max-width:900px){.shell{grid-template-columns:minmax(0,1fr)}.wing{position:static;max-height:none;overflow:visible}.memos{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}}
@@ -479,6 +542,7 @@ dialog::backdrop{background:rgba(20,18,28,.35)}
    <div class="mainc">
     <div class="top">
       <div class="brand">2026 업무 다이어리<small id="sync-state">불러오는 중…</small></div>
+      <form class="searchbox" id="search-form" role="search"><input id="search-q" type="search" placeholder="전체 검색" aria-label="전체 검색" autocomplete="off"></form>
       <button class="btn" id="btn-add">+ 업무 추가</button>
       <button class="btn" id="btn-backup">백업 다운로드</button>
       <button class="btn" id="btn-data">데이터 옮기기</button>
@@ -489,7 +553,8 @@ dialog::backdrop{background:rgba(20,18,28,.35)}
     <nav class="tabs" role="tablist" id="tabs"></nav>
     <main id="view"></main>
    </div>
-   <aside class="wing" aria-label="메모">
+   <aside class="wing" aria-label="오늘과 메모">
+    <section class="today-card" id="today" aria-label="오늘"></section>
     <div class="wing-head"><span class="wing-title">MEMO</span><span class="muted small" id="memo-count"></span><button class="btn btn-xs" id="memo-add">+ 메모</button></div>
     <div class="memos" id="memos"></div>
    </aside>
@@ -517,7 +582,7 @@ const DOW = ["일","월","화","수","목","금","토"];
 const TABS = [["month","월간 달력"],["week","주간 다이어리"],["db","업무DB"],["stats","분류별 통계"],["progress","진행현황"],["feedback","월별 피드백"],["leave","연차 관리"]];
 
 const LEAVE_TYPES = {"연차":1,"오전반차":0.5,"오후반차":0.5,"반반차":0.25,"전사휴가":0,"병가":0,"경조사":0,"기타":0};
-const S = {tab:"month", tasks:{}, rules:[], people:[], memos:[], symbols:["★"], weeks:{}, feedback:{months:{}}, settingsHash:null, holidays:{}, leave:{grants:[],uses:{}}, leaveYear:String(new Date().getFullYear()),
+const S = {tab:"month", tasks:{}, rules:[], people:[], memos:[], ui:{}, symbols:["★"], weeks:{}, feedback:{months:{}}, settingsHash:null, holidays:{}, leave:{grants:[],uses:{}}, leaveYear:String(new Date().getFullYear()),
   cur:new Date(), weekStart:mondayOf(new Date()), fbMonth:null, statPeriod:"all", statNoOff:true, progPeriod:"all",
   f:{q:"",m:"",c:"",s:""}};
 let db = null, dirty = false, settingsLoaded = false;
@@ -906,6 +971,7 @@ function render(){
   ALL=null;
   if($("#app").hidden) return;
   renderTabs();
+  renderToday();
   if(S.detailId) return rDetail();
   ({month:rMonth,week:rWeek,db:rDB,stats:rStats,progress:rProgress,feedback:rFeedback,leave:rLeave})[S.tab]();
 }
@@ -1458,7 +1524,7 @@ function rFeedback(){
   if(k>="2026-11" && !(fb.kpi||"").trim() && prev && (prev.kpi||"").trim()){ fb.kpi=prev.kpi; fb.kpiFrom=prevK; saveFbSoon(); }
   const hl=ts.filter(t=>t.hist), cancel=ts.filter(t=>t.status==="취소");
   $("#view").innerHTML=`<section class="sheet">
-   <div class="sheet-head"><h2>월별 피드백</h2><button class="btn btn-main" id="cp1">${mLabel(k)} 보고서 복사</button><button class="btn" id="cpall">전체 월 복사</button></div>
+   <div class="sheet-head"><h2>월별 피드백</h2><button class="btn btn-main" id="cp1">${mLabel(k)} 보고서 복사</button><button class="btn" id="cpall">전체 월 복사</button><button class="btn" id="fb-draft">업무DB로 초안 만들기</button></div>
    <div class="mchips" style="margin-bottom:16px">${ms.map(m=>{ const f=S.feedback.months[m]; const has=f&&FB_FIELDS.some(([x])=>f[x]); return `<button class="mchip ${has?"has":""}" aria-pressed="${m===k}" data-m="${m}">${mLabel(m)}</button>`; }).join("")}</div>
    <div class="fb-grid">
     <div>
@@ -1483,6 +1549,7 @@ function rFeedback(){
    </div></section>`;
   $("#view").querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{S.fbMonth=b.dataset.m;render();});
   $("#cp1").onclick=()=>copyText(fbReport(k),`${mLabel(k)} 보고서를`);
+  $("#fb-draft").onclick=()=>fbDraftDlg(k,fb);
   const kc=$("#kpi-copy"); if(kc) kc.onclick=()=>{ if(kc.dataset.armed||!(fb.kpi||"").trim()||fb.kpi===prev.kpi){ fb.kpi=prev.kpi; fb.kpiFrom=prevK; saveFbSoon(); render(); } else { kc.dataset.armed=1; kc.textContent="지금 KPI 내용을 덮어써요 · 한 번 더"; } };
   $("#cpall").onclick=()=>copyText(ms.filter(m=>{ const f=S.feedback.months[m]; return f&&FB_FIELDS.some(([x])=>f[x]); }).map(fbReport).join("\n\n────────────\n\n"),"전체 월 보고서를");
   $("#view").querySelectorAll("[data-f]").forEach(t=>{ const fit=()=>{ t.style.height="auto"; t.style.height=Math.max(t.dataset.f==="boss"?120:90,t.scrollHeight+2)+"px"; }; fit(); t.oninput=()=>{ fb[t.dataset.f]=t.value; if(t.dataset.f==="kpi") delete fb.kpiFrom; fit(); saveFbSoon(); }; });
@@ -1628,6 +1695,111 @@ $("#memo-add").onclick=()=>{
   const ti=$(`.memo[data-mid="${m.id}"] [data-mtitle]`); if(ti) ti.focus();
 };
 
+/* ---------- TODAY card (right wing, above memos) ---------- */
+function todayWeek(){ const mon=mondayOf(new Date()), k=ymd(mon); return {k, doc:S.weeks[k], di:(new Date().getDay()+6)%7}; }
+function renderToday(){
+  const box=$("#today"); if(!box) return;
+  const d=new Date(), ds=ymd(d), folded=!!S.ui.todayFolded;
+  const evs=all().filter(t=>covers(t,ds)&&!isOff(t)).sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"));
+  const {k,doc,di}=todayWeek(); const items=(di<5&&doc&&doc.days[di])?doc.days[di].items:[];
+  const live=items.filter(x=>x.s!=="cancel"&&x.t), done=live.filter(x=>x.s==="done").length;
+  const soon=all().filter(t=>t.start>ds&&t.start<=ymd(addDays(d,3))&&t.status!=="완료"&&t.status!=="취소"&&!isOff(t)).sort((a,b)=>a.start.localeCompare(b.start)).slice(0,4);
+  const hol=holName(ds), lv=leaveOn(ds);
+  const DOWL=["일요일","월요일","화요일","수요일","목요일","금요일","토요일"];
+  const tm=t=>{ const m=/(\d{1,2}:\d{2})/.exec(t.time||""); return m?m[1].padStart(5,"0"):"종일"; };
+  box.className="today-card daily"+(folded?" folded":"");
+  box.innerHTML=`<div class="dp-head">
+     <div class="dp-num ${d.getDay()===0||hol?"red":""}">${d.getDate()}</div>
+     <div class="dp-dow"><b>${DOWL[d.getDay()]}</b><span>${d.getFullYear()}. ${String(d.getMonth()+1).padStart(2,"0")}</span></div>
+     <div class="dp-prog" title="오늘 할 일 완료/전체">${live.length?`<b>${done}</b> / ${live.length}`:""}</div>
+   </div>
+   ${hol||lv?`<div class="dp-flags">${hol?`<span class="hol">${esc(hol)}</span>`:""}${lv?lvTag(lv):""}</div>`:""}
+   ${folded?`<div class="dp-sum">일정 ${evs.length} · 할 일 ${done}/${live.length}${soon.length?` · D-${Math.round((pd(soon[0].start)-pd(ds))/864e5)} ${soon.length}건`:""}</div>`:`
+   <div class="dp-lines">
+    ${evs.length?evs.slice(0,6).map(t=>`<button class="dp-row ${t.status==="완료"?"is-done":""} ${t.status==="취소"?"is-cancel":""}" data-ttask="${t.id}"><span class="dp-time">${tm(t)}</span><span class="dp-t">${esc(cleanName(t))}</span></button>`).join(""):`<div class="dp-row dp-empty">오늘은 일정이 없어요</div>`}
+    <div class="dp-cut" aria-hidden="true"></div>
+    ${live.length?live.map(it=>`<button class="dp-row dp-todo ${it.s}" data-ttodo="${items.indexOf(it)}" title="눌러서 완료 표시"><span class="dp-ck">${it.s==="done"?"☑":it.s==="moved"?"→":"☐"}</span><span class="dp-t">${esc(it.t)}</span></button>`).join(""):`<div class="dp-row dp-empty">주간 다이어리에 오늘 할 일이 없어요</div>`}
+   </div>
+   ${soon.length?`<div class="dp-soon">${soon.map(t=>`<button class="dp-soon-row" data-ttask="${t.id}"><span class="dp-dd">D-${Math.round((pd(t.start)-pd(ds))/864e5)}</span><span class="dp-t">${esc(cleanName(t))}</span></button>`).join("")}</div>`:""}`}
+   <button class="memo-fold" id="today-fold" title="${folded?"펼치기":"접기"}" aria-label="${folded?"오늘 펼치기":"오늘 접기"}" aria-expanded="${!folded}"></button>`;
+  box.querySelectorAll("[data-ttask]").forEach(b=>b.onclick=()=>{ const t=findTask(b.dataset.ttask); if(t) taskForm(t); });
+  box.querySelectorAll("[data-ttodo]").forEach(b=>b.onclick=()=>{ const it=items[Number(b.dataset.ttodo)]; if(!it) return; it.s=it.s==="done"?"todo":"done"; persist("weeks",k,doc); render(); });
+  $("#today-fold").onclick=()=>{ S.ui.todayFolded=!S.ui.todayFolded; persist("settings","ui",S.ui); renderToday(); };
+}
+
+/* ---------- global search ---------- */
+function searchAll(q){
+  q=q.trim().toLowerCase(); if(!q) return [];
+  const hit=s=>(s||"").toLowerCase().includes(q), out=[];
+  all().forEach(t=>{ if(hit(t.name)||hit(t.desc)||hit(t.place)||hit(t.owner)) out.push({g:"업무DB",title:t.name,sub:`${t.start?md(t.start):"날짜 없음"} · ${t.status}${hit(t.desc)&&!hit(t.name)?" · 상세 내용":""}`,snip:hit(t.desc)?t.desc:"",go:()=>taskForm(findTask(t.id))}); });
+  Object.keys(S.weeks).sort().reverse().forEach(k=>{ const w=S.weeks[k], mon=pd(k);
+    w.days.slice(0,5).forEach((d,i)=>{ const ds=ymd(addDays(mon,i)), go=()=>{ S.detailId=null; S.tab="week"; S.weekStart=mon; render(); const b=$(`.dayblock[data-di="${i}"]`); if(b){ b.scrollIntoView({block:"center"}); b.classList.add("flash"); setTimeout(()=>b.classList.remove("flash"),1600); } };
+      if(hit(d.memo)) out.push({g:"주간 다이어리",title:d.memo,sub:`${md(ds)} (${DOW[addDays(mon,i).getDay()]}) 메모`,go});
+      d.items.forEach(it=>{ if(hit(it.t)||hit(it.n)||(it.who||[]).some(hit)) out.push({g:"주간 다이어리",title:it.t,sub:`${md(ds)} (${DOW[addDays(mon,i).getDay()]}) · ${({todo:"할 일",done:"완료",moved:"이월",cancel:"취소"})[it.s]}${(it.who||[]).length?" · "+it.who.join(", "):""}`,go}); }); });
+    const goW=()=>{ S.detailId=null; S.tab="week"; S.weekStart=mon; render(); };
+    if(hit(w.note)) out.push({g:"주간 다이어리",title:"FREE NOTE",sub:`${md(k)} 주`,snip:w.note,go:goW});
+    if(hit(w.top)) out.push({g:"주간 다이어리",title:w.top,sub:`${md(k)} 주 메모`,go:goW}); });
+  Object.keys(S.feedback.months||{}).sort().reverse().forEach(m=>{ const f=S.feedback.months[m];
+    FB_FIELDS.forEach(([fk,l])=>{ if(hit(f[fk])) out.push({g:"월별 피드백",title:`${mLabel(m)} · ${l}`,sub:m.replace("-","년 ")+"월",snip:f[fk],go:()=>{ S.detailId=null; S.tab="feedback"; S.fbMonth=m; render(); }}); }); });
+  S.memos.forEach(m=>{ if(hit(m.title)||hit(m.text)) out.push({g:"메모",title:m.title||(m.text||"").split("\n")[0]||"메모",sub:m.at?md(m.at)+" 메모":"메모",snip:m.text,go:()=>{ const el=$(`.memo[data-mid="${m.id}"]`); if(el){ el.scrollIntoView({block:"center"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"),1600); } }}); });
+  Object.entries(S.leave.uses).forEach(([d,v])=>{ if(hit(v.memo)||hit(v.type)) out.push({g:"연차",title:`${md(d)} ${v.type}`,sub:v.memo||"",go:()=>{ S.detailId=null; S.tab="leave"; S.leaveYear=d.slice(0,4); render(); }}); });
+  return out;
+}
+function snippet(s,q){ s=(s||"").replace(/\s+/g," "); const i=s.toLowerCase().indexOf(q.toLowerCase()); if(i<0) return ""; const a=Math.max(0,i-24); return (a?"…":"")+s.slice(a,i+q.length+40)+(i+q.length+40<s.length?"…":""); }
+function mark(s,q){ const e=esc(s), qi=esc(q); if(!qi) return e; return e.split(new RegExp(qi.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"gi")).join(`<mark>${qi}</mark>`); }
+function openSearch(q){
+  const res=searchAll(q); const groups=[...new Set(res.map(r=>r.g))];
+  openDlg(`<h3>"${esc(q)}" 검색 결과 <span class="muted small">${res.length}건</span></h3>
+   <div class="search-res">${res.length?groups.map(g=>`<div class="sr-g">${g}</div>${res.map((r,i)=>r.g===g?`<button class="sr-row" data-sr="${i}"><span class="sr-t">${mark(r.title||"",q)}</span><span class="sr-s">${esc(r.sub||"")}</span>${r.snip&&snippet(r.snip,q)?`<span class="sr-n">${mark(snippet(r.snip,q),q)}</span>`:""}</button>`:"").join("")}`).join(""):`<p class="muted">찾는 내용이 없어요. 다른 단어로 검색해 보세요.</p>`}</div>
+   <div class="dlg-foot"><button class="btn" data-close>닫기</button></div>`);
+  $("#dlg-body").querySelectorAll("[data-sr]").forEach(b=>b.onclick=()=>{ const r=res[Number(b.dataset.sr)]; closeDlg(); r.go(); });
+}
+$("#search-form").onsubmit=e=>{ e.preventDefault(); const q=$("#search-q").value.trim(); if(q) openSearch(q); };
+
+/* ---------- monthly feedback draft from 업무DB + 주간 ---------- */
+function fbDraft(k){
+  const ts=all().filter(t=>t.start&&t.start.startsWith(k)&&!isOff(t)&&t.status!=="취소");
+  const buckets={"1) 고객사용지원":[],"2) 오류예방, 대응":[],"3) 개선":[],"4) 행정 지원":[]};
+  const pick=n=>/QA|라이브|LIVE|live|배포|오류|에러|핫픽스|점검|테스트/.test(n)?"2) 오류예방, 대응":/결재|지결|지출|정산|세금계산서|구매|계약|발주|상신|예산|법인폰|인쇄|인증서|광고/.test(n)?"4) 행정 지원":/상담|문의|교육|안내|응대|VOC|voc|원격/.test(n)?"1) 고객사용지원":"3) 개선";
+  ts.filter(t=>t.cat!=="회의"&&!t.rec).forEach(t=>buckets[pick(t.name)].push(`- ${cleanName(t)}${t.status!=="완료"?` (${t.status})`:""}`));
+  const wk=[]; Object.keys(S.weeks).forEach(wkKey=>{ const mon=pd(wkKey); S.weeks[wkKey].days.slice(0,5).forEach((d,i)=>{ if(!ymd(addDays(mon,i)).startsWith(k)) return; d.items.forEach(it=>{ if(it.s==="done"&&it.t&&!it.lv) wk.push(it.t); }); }); });
+  const seen=new Set(ts.map(t=>cleanName(t)));
+  [...new Set(wk)].filter(x=>!seen.has(x)).forEach(x=>buckets[pick(x)].push(`- ${x}`));
+  const core=Object.entries(buckets).filter(([,v])=>v.length).map(([h,v])=>`${h}\n\n${v.join("\n")}`).join("\n\n");
+  const meet=ts.filter(t=>t.cat==="회의").length;
+  const hl=ts.filter(t=>t.hist);
+  const growth=hl.length?hl.map(t=>`- ${cleanName(t)}${t.desc?`\n    → ${t.desc.split("\n")[0]}`:""}`).join("\n"):"";
+  return {core:(core||"(이번 달 업무DB·주간 기록이 없어요)")+(meet?`\n\n※ 이번 달 회의 ${meet}건 참석`:""), growth};
+}
+function fbDraftDlg(k,fb){
+  const d=fbDraft(k);
+  openDlg(`<h3>${mLabel(k)} 피드백 초안</h3>
+   <p class="muted small" style="margin:0 0 10px">업무DB(취소 제외)와 주간 다이어리 완료 항목을 4가지로 분류했어요. ★히스토리 업무는 성장, 육성 초안으로 모았어요. 고친 뒤 넣으세요.</p>
+   <div class="fb-sec"><label class="fb-h" for="dr-core">핵심역량 초안</label><textarea class="fb-ta" id="dr-core" style="min-height:220px;overflow:auto;resize:vertical">${esc(d.core)}</textarea>
+    <div class="dr-act"><button class="btn btn-xs" data-dr="core" data-mode="add">핵심역량에 덧붙이기</button><button class="btn btn-xs" data-dr="core" data-mode="set">핵심역량 바꾸기</button></div></div>
+   <div class="fb-sec"><label class="fb-h" for="dr-growth">성장, 육성 초안</label><textarea class="fb-ta" id="dr-growth" style="min-height:110px;overflow:auto;resize:vertical" placeholder="★히스토리로 표시한 업무가 없어요">${esc(d.growth)}</textarea>
+    <div class="dr-act"><button class="btn btn-xs" data-dr="growth" data-mode="add">성장, 육성에 덧붙이기</button><button class="btn btn-xs" data-dr="growth" data-mode="set">성장, 육성 바꾸기</button></div></div>
+   <div class="dlg-foot"><button class="btn" data-close>닫기</button></div>`);
+  $("#dlg-body").querySelectorAll("[data-dr]").forEach(b=>b.onclick=()=>{
+    const f=b.dataset.dr, txt=$("#dr-"+f).value.trim(); if(!txt) return;
+    if(b.dataset.mode==="set" && (fb[f]||"").trim() && !b.dataset.armed){ b.dataset.armed=1; b.textContent="지금 내용을 덮어써요 · 한 번 더"; return; }
+    fb[f]=b.dataset.mode==="add"&&(fb[f]||"").trim()?fb[f].trimEnd()+"\n\n"+txt:txt;
+    saveFbSoon(); dirty=true; closeDlg(); toast("초안을 넣었어요. 내용을 다듬어 주세요."); });
+}
+
+/* ---------- 월개근 연차 자동 부여 (2026-05 ~ 2027-04, 매월 1일) ---------- */
+const AUTO_LEAVE={from:"2026-05",to:"2027-04"};
+let autoLeaveDone=false;
+function ensureMonthlyLeave(){
+  if(autoLeaveDone) return; autoLeaveDone=true;
+  const today=todayStr(); let added=0;
+  for(let d=pd(AUTO_LEAVE.from+"-01"); ym(d)<=AUTO_LEAVE.to && ymd(d)<=today; d=new Date(d.getFullYear(),d.getMonth()+1,1)){
+    const m=ym(d), has=S.leave.grants.some(g=>(g.date||"").startsWith(m)&&/월개근/.test(g.memo||""));
+    if(!has){ S.leave.grants.push({id:"ga"+m.replace("-",""),date:m+"-01",days:1,memo:`월개근 연차 (자동 · ${Number(m.slice(5))}월)`,auto:true}); added++; }
+  }
+  if(added){ saveLeave(); softRender(); }
+}
+
 /* ---------- backup ---------- */
 let dl=null;
 function buildBackup(){
@@ -1683,7 +1855,8 @@ async function boot(){
   db.collection("settings").doc("symbols").onSnapshot(s=>{ if(s.exists&&Array.isArray(s.data().list)) S.symbols=[...s.data().list]; softRender(); },()=>{});
   db.collection("settings").doc("people").onSnapshot(s=>{ S.people=s.exists?JSON.parse(JSON.stringify(s.data().list||[])):[]; if(!$("#pop")) softRender(); },()=>{});
   db.collection("settings").doc("recurring").onSnapshot(s=>{ S.rules=s.exists?JSON.parse(JSON.stringify(s.data().rules||[])):[]; ALL=null; softRender(); },()=>{});
-  db.collection("settings").doc("leave").onSnapshot(s=>{ if(s.exists&&!(S.tab==="leave"&&editingInView())){ const v=JSON.parse(JSON.stringify(s.data())); S.leave={grants:v.grants||[],uses:v.uses||{}}; } softRender(); },()=>{});
+  db.collection("settings").doc("leave").onSnapshot(s=>{ if(s.exists&&!(S.tab==="leave"&&editingInView())){ const v=JSON.parse(JSON.stringify(s.data())); S.leave={grants:v.grants||[],uses:v.uses||{}}; } if(!s.metadata.fromCache) ensureMonthlyLeave(); softRender(); },()=>{});
+  db.collection("settings").doc("ui").onSnapshot(s=>{ S.ui=s.exists?{...s.data()}:{}; renderToday(); },()=>{});
   db.collection("settings").doc("holidays").onSnapshot(s=>{ S.holidays=s.exists?{...(s.data().days||{})}:{}; softRender(); },()=>{});
   db.collection("weeks").onSnapshot(snap=>{ snap.docs.forEach(d=>{ if(d.id!==weekKey()||(!editingInView()&&!$("#pop"))) S.weeks[d.id]=JSON.parse(JSON.stringify(d.data())); }); softRender(); },()=>{});
   db.collection("feedback").doc("all").onSnapshot(s=>{ if(s.exists && !(S.tab==="feedback"&&editingInView())) S.feedback=JSON.parse(JSON.stringify(s.data())); if(!S.feedback.months) S.feedback.months={}; softRender(); },()=>{});
