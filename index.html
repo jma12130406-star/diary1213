@@ -1161,7 +1161,7 @@ function rWeek(){
        return `<div class="wl trow ${it.s} ${it.lv?"sub":""}" data-di="${i}" data-j="${j}"><span class="grip" title="끌어서 순서 바꾸기" aria-hidden="true">⠿</span>
         ${it.lv?`<button class="outbtn" data-act="out" title="내어쓰기 (상위 할 일로)" aria-label="내어쓰기">⇤</button>`:""}<button class="chk ${it.s}" data-act="chk" aria-label="완료 표시 (오른쪽 클릭: 이월·취소)" title="클릭: 완료 · 오른쪽 클릭(길게 누르기): 이월·취소">${CHK[it.s]}</button>
         <div class="mid"><textarea class="txt" data-act="txt" rows="1" aria-label="${it.lv?"하위 할 일":"할 일"}" title="Enter 새 줄 · Tab 들여쓰기 · Shift+Tab 내어쓰기">${esc(it.t)}</textarea>${it.n||it.from||(it.s==="moved"&&it.to)?`<div class="meta">${it.from?`<button class="mv-chip from" data-goto="${it.from}" title="${md(it.from)}에서 이월된 할 일 · 눌러서 그날로 이동">← ${md(it.from)}에서${it.mv>1?` · ${it.mv}번째`:""}</button>`:""}${it.s==="moved"&&it.to?`<button class="mv-chip to" data-goto="${it.to}" title="${md(it.to)}로 이월함 · 눌러서 그날로 이동">→ ${md(it.to)} 이월</button>`:""}${it.n?`<input data-act="note" value="${esc(it.n)}" aria-label="메모">`:""}</div>`:""}</div>
-        <div class="whocol">${(it.who||[]).length?`<span class="whos" data-act="who" role="button" tabindex="0" title="유관자 바꾸기">${it.who.map(whoChip).join("")}</span>`:""}</div>
+        <div class="whocol">${(it.who||[]).length?`<span class="whos" data-act="who" role="button" tabindex="0" title="유관자 바꾸기">${whoSorted(it.who).map(whoChip).join("")}</span>`:""}</div>
         <div class="side"><button class="icon-btn whobtn" data-act="who" title="유관자 추가" aria-label="유관자 추가">@▾</button>${it.lv?`<span class="slot"></span>`:`<button class="icon-btn" data-act="addsub" title="하위 할 일 추가" aria-label="하위 할 일 추가">＋</button>`}<button class="icon-btn" data-act="todb" title="업무DB로 보내기">DB</button><button class="icon-btn" data-act="del" title="지우기" aria-label="지우기">×</button></div></div>`; }).join("")}
      <div class="wl addrow"><input class="addtodo" data-add="${i}" placeholder="+ 할 일 적고 Enter" aria-label="${dlabel} 할 일 추가"></div>
     </div>`;
@@ -1325,6 +1325,7 @@ function rWeek(){
 const HUES=[340,200,140,30,265,175,8,95,225,300,55,120];
 function hueOf(n){ const p=S.people.find(x=>x.name===n); if(p) return p.h; let s=0; for(const c of n) s=(s*31+c.charCodeAt(0))%360; return s; }
 function whoChip(n){ return `<span class="who" style="--h:${hueOf(n)}">${esc(n)}</span>`; }
+function whoSorted(w){ const ix=n=>{ const i=S.people.findIndex(p=>p.name===n); return i<0?1e9:i; }; return [...(w||[])].sort((a,b)=>ix(a)-ix(b)); }
 function savePeople(){ persist("settings","people",{list:S.people}); }
 let popState=null;
 function closeWho(){ const p=$("#pop"); if(p) p.remove(); popState=null; popArmed=null; }
@@ -1335,8 +1336,8 @@ function openWho(btn,it,reopen){
   const pop=document.createElement("div"); pop.id="pop"; pop.setAttribute("role","dialog"); pop.setAttribute("aria-label","유관자");
   const draw=()=>{
     const sel=new Set(it.who||[]);
-    pop.innerHTML=`<div class="pop-title">유관자 <span class="muted" style="font-weight:400">· 이름을 누르면 이 할 일에 붙이고 빼요</span></div>
-     <div class="pop-list">${S.people.length?S.people.map(p=>`<div class="pop-item ${popArmed===p.name?"armed":""}"><button class="pick ${sel.has(p.name)?"on":""}" data-pick="${esc(p.name)}" role="menuitemcheckbox" aria-checked="${sel.has(p.name)}"><i class="pdot" style="--h:${p.h}"></i><span class="pname">${esc(p.name)}</span></button><button class="pop-x" data-rm="${esc(p.name)}" aria-label="${esc(p.name)} 완전히 삭제" title="${popArmed===p.name?"한 번 더 누르면 목록과 모든 할 일에서 삭제":"삭제"}">${popArmed===p.name?"삭제":"×"}</button></div>`).join(""):`<span class="muted small">아직 등록된 사람이 없어요.</span>`}</div>
+    pop.innerHTML=`<div class="pop-title">유관자 <span class="muted" style="font-weight:400">· 이름을 누르면 붙이고 빼요 · 끌어서 순서 바꾸기</span></div>
+     <div class="pop-list">${S.people.length?S.people.map(p=>`<div class="pop-item ${popArmed===p.name?"armed":""}" data-pn="${esc(p.name)}"><button class="pick ${sel.has(p.name)?"on":""}" data-pick="${esc(p.name)}" role="menuitemcheckbox" aria-checked="${sel.has(p.name)}"><i class="pdot" style="--h:${p.h}"></i><span class="pname">${esc(p.name)}</span></button><button class="pop-x" data-rm="${esc(p.name)}" aria-label="${esc(p.name)} 완전히 삭제" title="${popArmed===p.name?"한 번 더 누르면 목록과 모든 할 일에서 삭제":"삭제"}">${popArmed===p.name?"삭제":"×"}</button></div>`).join(""):`<span class="muted small">아직 등록된 사람이 없어요.</span>`}</div>
      ${popArmed?`<div class="pop-warn">'${esc(popArmed)}'을(를) 목록과 모든 할 일에서 지워요. 빨간 "삭제"를 한 번 더 누르세요.</div>`:""}
      <input class="inp" id="pop-new" placeholder="이름 적고 Enter (5자까지)" maxlength="5" aria-label="새 유관자 이름">`;
     pop.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{ popArmed=null; const n=b.dataset.pick; const w=new Set(it.who||[]); w.has(n)?w.delete(n):w.add(n); it.who=[...w]; if(!it.who.length) delete it.who; saveWeekSoon(); reopen(); });
@@ -1348,6 +1349,7 @@ function openWho(btn,it,reopen){
       // also take the name off every to-do that carries it
       Object.entries(S.weeks).forEach(([k,doc])=>{ let ch=false; (doc.days||[]).forEach(d=>(d.items||[]).forEach(x=>{ if((x.who||[]).includes(n)){ x.who=x.who.filter(y=>y!==n); if(!x.who.length) delete x.who; ch=true; } })); if(ch) persist("weeks",k,doc); });
       toast(`'${n}'을(를) 삭제했어요.`); reopen(); });
+    sortable([...pop.querySelectorAll("[data-pn]")],"pn",S.people.map(p=>p.name),arr=>{ S.people=arr.map(n=>S.people.find(p=>p.name===n)).filter(Boolean); savePeople(); popArmed=null; reopen(); });
     const inp=pop.querySelector("#pop-new");
     inp.onkeydown=e=>{ if(e.key==="Escape") return; if(e.key!=="Enter"||e.isComposing) return; const n=inp.value.trim(); if(!n) return;
       if(!S.people.some(p=>p.name===n)){ S.people.push({name:n,h:HUES[S.people.length%HUES.length]}); savePeople(); }
