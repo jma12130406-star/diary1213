@@ -320,7 +320,10 @@ select.inp,input.inp,textarea.inp{border:1px solid var(--line);background:var(--
 @media (hover:none){.trow .grip{opacity:.5}}
 .outbtn{position:absolute;left:0;top:6px;width:22px;height:22px;border:0;border-radius:6px;background:transparent;color:var(--ink-3);font-size:13px;padding:0;line-height:1}
 .outbtn:hover{background:var(--navy);color:var(--paper)}
-.trow{position:relative;display:grid;grid-template-columns:28px minmax(0,1fr) 110px;align-items:start;gap:4px;min-height:30px;padding:2px 0;border-bottom:1px solid var(--line)}
+.trow .whocol{min-width:0;padding-top:5px;display:flex;justify-content:flex-end}
+.trow .whocol .whos{max-width:100%;margin-right:0;justify-content:flex-end}
+.trow .whocol .who{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.trow{position:relative;display:grid;grid-template-columns:28px minmax(0,1fr) 80px 110px;align-items:start;gap:4px;min-height:30px;padding:2px 0;border-bottom:1px solid var(--line)}
 .trow .mid{display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 6px;min-width:0;padding-top:4px}
 .trow .txt{flex:1 1 160px;min-width:0;display:block;resize:none;overflow:hidden;border:0;background:transparent;font-family:var(--f-hand);font-size:14px;line-height:1.5;padding:0;margin:0;color:var(--ink)}
 .trow .txt:focus{outline:none}
@@ -346,9 +349,11 @@ select.inp,input.inp,textarea.inp{border:1px solid var(--line);background:var(--
 .pick.on{background:var(--paper-2);border-color:var(--navy);color:var(--ink);font-weight:600}
 .pdot{width:8px;height:8px;border-radius:50%;flex:none;background:hsl(var(--h) 70% 60%)}
 .pname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
-.pop-item .pop-x{position:absolute;top:-6px;right:-5px;width:16px;height:16px;padding:0;line-height:14px;border-radius:50%;background:var(--paper);border:1px solid var(--line);font-size:11px}
-.pop-x{border:0;background:transparent;color:var(--ink-3);font-size:13px;padding:0 3px;cursor:pointer;opacity:0}
-.pop-item:hover .pop-x,.pop-x:focus-visible{opacity:1}
+.pop-item .pop-x{position:absolute;top:-6px;right:-5px;min-width:16px;height:16px;padding:0 3px;line-height:14px;border-radius:99px;background:var(--paper);border:1px solid var(--line);font-size:11px;color:var(--ink-3);cursor:pointer;opacity:.75}
+.pop-item .pop-x:hover{opacity:1;color:var(--red);border-color:var(--red)}
+.pop-item.armed .pop-x{opacity:1;background:var(--red);border-color:var(--red);color:#fff;font-weight:600;z-index:2}
+.pop-item.armed .pick{border-color:var(--red)}
+.pop-warn{font-size:11.5px;color:var(--red);line-height:1.5}
 #pop .inp{width:100%}
 .titlebtn{border:0;background:transparent;font:inherit;color:inherit;padding:2px 6px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:baseline;gap:4px}
 .titlebtn:hover{background:var(--paper-2)}
@@ -1129,7 +1134,8 @@ function rWeek(){
      ${d.items.map((it,j)=>{
        return `<div class="wl trow ${it.s} ${it.lv?"sub":""}" data-di="${i}" data-j="${j}"><span class="grip" title="끌어서 순서 바꾸기" aria-hidden="true">⠿</span>
         ${it.lv?`<button class="outbtn" data-act="out" title="내어쓰기 (상위 할 일로)" aria-label="내어쓰기">⇤</button>`:""}<button class="chk ${it.s}" data-act="chk" aria-label="상태 바꾸기">${CHK[it.s]}</button>
-        <div class="mid"><textarea class="txt" data-act="txt" rows="1" aria-label="${it.lv?"하위 할 일":"할 일"}" title="Enter 새 줄 · Tab 들여쓰기 · Shift+Tab 내어쓰기">${esc(it.t)}</textarea>${it.n||(it.who||[]).length?`<div class="meta">${it.n?`<input data-act="note" value="${esc(it.n)}" aria-label="메모">`:""}${(it.who||[]).length?`<span class="whos" data-act="who" role="button" tabindex="0" title="유관자 바꾸기">${it.who.map(whoChip).join("")}</span>`:""}</div>`:""}</div>
+        <div class="mid"><textarea class="txt" data-act="txt" rows="1" aria-label="${it.lv?"하위 할 일":"할 일"}" title="Enter 새 줄 · Tab 들여쓰기 · Shift+Tab 내어쓰기">${esc(it.t)}</textarea>${it.n?`<div class="meta"><input data-act="note" value="${esc(it.n)}" aria-label="메모"></div>`:""}</div>
+        <div class="whocol">${(it.who||[]).length?`<span class="whos" data-act="who" role="button" tabindex="0" title="유관자 바꾸기">${it.who.map(whoChip).join("")}</span>`:""}</div>
         <div class="side"><button class="icon-btn whobtn" data-act="who" title="유관자 추가" aria-label="유관자 추가">@▾</button>${it.lv?`<span class="slot"></span>`:`<button class="icon-btn" data-act="addsub" title="하위 할 일 추가" aria-label="하위 할 일 추가">＋</button>`}<button class="icon-btn" data-act="todb" title="업무DB로 보내기">DB</button><button class="icon-btn" data-act="del" title="지우기" aria-label="지우기">×</button></div></div>`; }).join("")}
      <div class="wl addrow"><input class="addtodo" data-add="${i}" placeholder="+ 할 일 적고 Enter" aria-label="${dlabel} 할 일 추가"></div>
     </div>`;
@@ -1288,18 +1294,27 @@ function hueOf(n){ const p=S.people.find(x=>x.name===n); if(p) return p.h; let s
 function whoChip(n){ return `<span class="who" style="--h:${hueOf(n)}">${esc(n)}</span>`; }
 function savePeople(){ persist("settings","people",{list:S.people}); }
 let popState=null;
-function closeWho(){ const p=$("#pop"); if(p) p.remove(); popState=null; }
+function closeWho(){ const p=$("#pop"); if(p) p.remove(); popState=null; popArmed=null; }
+let popArmed=null;
 function openWho(btn,it,reopen){
   closeWho();
   popState={reopen,key:null};
   const pop=document.createElement("div"); pop.id="pop"; pop.setAttribute("role","dialog"); pop.setAttribute("aria-label","유관자");
   const draw=()=>{
     const sel=new Set(it.who||[]);
-    pop.innerHTML=`<div class="pop-title">유관자</div>
-     <div class="pop-list">${S.people.length?S.people.map(p=>`<div class="pop-item"><button class="pick ${sel.has(p.name)?"on":""}" data-pick="${esc(p.name)}" role="menuitemcheckbox" aria-checked="${sel.has(p.name)}"><i class="pdot" style="--h:${p.h}"></i><span class="pname">${esc(p.name)}</span></button><button class="pop-x" data-rm="${esc(p.name)}" aria-label="${esc(p.name)} 목록에서 빼기" title="목록에서 빼기">×</button></div>`).join(""):`<span class="muted small">아직 등록된 사람이 없어요.</span>`}</div>
-     <input class="inp" id="pop-new" placeholder="이름 적고 Enter" aria-label="새 유관자 이름">`;
-    pop.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{ const n=b.dataset.pick; const w=new Set(it.who||[]); w.has(n)?w.delete(n):w.add(n); it.who=[...w]; if(!it.who.length) delete it.who; saveWeekSoon(); reopen(); });
-    pop.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{ S.people=S.people.filter(p=>p.name!==b.dataset.rm); savePeople(); draw(); });
+    pop.innerHTML=`<div class="pop-title">유관자 <span class="muted" style="font-weight:400">· 이름을 누르면 이 할 일에 붙이고 빼요</span></div>
+     <div class="pop-list">${S.people.length?S.people.map(p=>`<div class="pop-item ${popArmed===p.name?"armed":""}"><button class="pick ${sel.has(p.name)?"on":""}" data-pick="${esc(p.name)}" role="menuitemcheckbox" aria-checked="${sel.has(p.name)}"><i class="pdot" style="--h:${p.h}"></i><span class="pname">${esc(p.name)}</span></button><button class="pop-x" data-rm="${esc(p.name)}" aria-label="${esc(p.name)} 완전히 삭제" title="${popArmed===p.name?"한 번 더 누르면 목록과 모든 할 일에서 삭제":"삭제"}">${popArmed===p.name?"삭제":"×"}</button></div>`).join(""):`<span class="muted small">아직 등록된 사람이 없어요.</span>`}</div>
+     ${popArmed?`<div class="pop-warn">'${esc(popArmed)}'을(를) 목록과 모든 할 일에서 지워요. 빨간 "삭제"를 한 번 더 누르세요.</div>`:""}
+     <input class="inp" id="pop-new" placeholder="이름 적고 Enter (5자까지)" maxlength="5" aria-label="새 유관자 이름">`;
+    pop.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{ popArmed=null; const n=b.dataset.pick; const w=new Set(it.who||[]); w.has(n)?w.delete(n):w.add(n); it.who=[...w]; if(!it.who.length) delete it.who; saveWeekSoon(); reopen(); });
+    pop.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{
+      const n=b.dataset.rm;
+      if(popArmed!==n){ popArmed=n; draw(); return; }
+      popArmed=null;
+      S.people=S.people.filter(p=>p.name!==n); savePeople();
+      // also take the name off every to-do that carries it
+      Object.entries(S.weeks).forEach(([k,doc])=>{ let ch=false; (doc.days||[]).forEach(d=>(d.items||[]).forEach(x=>{ if((x.who||[]).includes(n)){ x.who=x.who.filter(y=>y!==n); if(!x.who.length) delete x.who; ch=true; } })); if(ch) persist("weeks",k,doc); });
+      toast(`'${n}'을(를) 삭제했어요.`); reopen(); });
     const inp=pop.querySelector("#pop-new");
     inp.onkeydown=e=>{ if(e.key==="Escape") return; if(e.key!=="Enter"||e.isComposing) return; const n=inp.value.trim(); if(!n) return;
       if(!S.people.some(p=>p.name===n)){ S.people.push({name:n,h:HUES[S.people.length%HUES.length]}); savePeople(); }
