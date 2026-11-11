@@ -233,6 +233,15 @@ select.inp,input.inp,textarea.inp{border:1px solid var(--line);background:var(--
 .dayblock.focus .d::after{content:"TODAY";font-family:var(--f-ui);font-size:10px;letter-spacing:.1em;margin-left:6px;opacity:.85}
 .daymemo:focus{border-bottom-color:var(--rule);outline:none}
 .dbref{display:flex;gap:4px;flex-wrap:wrap;margin:2px 0 4px}
+.trow .grip{position:absolute;left:-17px;top:7px;font-size:13px;line-height:1;color:var(--ink-3);opacity:0;cursor:grab;user-select:none;padding:2px}
+.trow:hover .grip{opacity:.7}
+.trow .grip:hover{opacity:1;color:var(--navy)}
+.trow.sub .grip{left:-17px}
+.trow.dragging{opacity:.4}
+.trow.drop-above{box-shadow:0 -2px 0 var(--navy)}
+.trow.drop-below{box-shadow:0 2px 0 var(--navy)}
+.dayblock.day-drop{background:var(--paper-2);border-radius:8px}
+@media (hover:none){.trow .grip{opacity:.5}}
 .outbtn{position:absolute;left:0;top:6px;width:22px;height:22px;border:0;border-radius:6px;background:transparent;color:var(--ink-3);font-size:13px;padding:0;line-height:1}
 .outbtn:hover{background:var(--navy);color:var(--paper)}
 .trow{position:relative;display:grid;grid-template-columns:28px minmax(0,1fr) 110px;align-items:start;gap:4px;min-height:30px;padding:2px 0;border-bottom:1px solid var(--line)}
@@ -248,7 +257,7 @@ select.inp,input.inp,textarea.inp{border:1px solid var(--line);background:var(--
 .trow:last-of-type{border-bottom:0}
 .trow.sub{padding-left:26px;min-height:26px;border-bottom-style:dashed}
 .trow.sub .chk{font-size:16px}
-.trow.sub .txt{font-size:13px;color:var(--ink-2)}
+.trow.sub .txt{font-size:13px}
 .who{display:inline-flex;align-items:center;height:20px;padding:0 9px;border-radius:999px;font-size:11.5px;font-weight:600;line-height:1;white-space:nowrap;background:hsl(var(--h) 85% var(--who-bg));color:hsl(var(--h) 50% var(--who-fg));border:1px solid hsl(var(--h) 60% var(--who-bd))}
 .whos{display:inline-flex;gap:3px;flex-wrap:wrap;margin-right:4px;cursor:pointer;max-width:220px}
 .whobtn{font-size:12px;letter-spacing:-.02em}
@@ -419,6 +428,8 @@ svg text{fill:var(--ink-2);font-size:11px;font-family:var(--f-ui)}
 dialog{border:0;border-radius:16px;padding:0;background:var(--paper);color:var(--ink);box-shadow:var(--shadow);width:min(520px,calc(100% - 32px))}
 dialog::backdrop{background:rgba(20,18,28,.35)}
 .dlg{padding:20px;position:relative}
+.dlg-x{position:absolute;top:12px;right:12px;width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:var(--ink-2);font-size:20px;line-height:1;padding:0}
+.dlg-x:hover{background:var(--paper-2);color:var(--ink)}
 .copybtn{position:absolute;top:14px;right:14px;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink-2);padding:0}
 .copybtn.inline{position:static}
 .copybtn:hover{border-color:var(--line);background:var(--paper-2);color:var(--navy)}
@@ -1032,9 +1043,9 @@ function rWeek(){
      <div class="dayhead"><button class="d ${weekend||holName(ds)?"sun":""}" data-hl="${i}" aria-pressed="${!!d.hl}" title="눌러서 오늘 표시 켜기/끄기">${dlabel}</button>${holName(ds)?`<span class="hol">${esc(holName(ds))}</span>`:""}${leaveOn(ds)?lvTag(leaveOn(ds)):""}<input class="daymemo" data-memo="${i}" value="${esc(d.memo)}" placeholder="* 일정 메모" aria-label="${dlabel} 메모"></div>
      ${refs.length?`<div class="dbref">${refs.map(t=>`<span class="chip" title="업무DB"><i class="dot" style="background:${CAT_COLOR[t.cat]||CAT_COLOR[""]}"></i>${esc(t.name)}</span>`).join("")}</div>`:""}
      ${d.items.map((it,j)=>{ const kids=it.lv?[]:childrenOf(d.items,j); const kd=kids.filter(k=>d.items[k].s==="done").length;
-       return `<div class="trow ${it.s} ${it.lv?"sub":""}" data-di="${i}" data-j="${j}">
+       return `<div class="trow ${it.s} ${it.lv?"sub":""}" data-di="${i}" data-j="${j}"><span class="grip" title="끌어서 순서 바꾸기" aria-hidden="true">⠿</span>
         ${it.lv?`<button class="outbtn" data-act="out" title="내어쓰기 (상위 할 일로)" aria-label="내어쓰기">⇤</button>`:""}<button class="chk ${it.s}" data-act="chk" aria-label="상태 바꾸기">${CHK[it.s]}</button>
-        <div class="mid"><textarea class="txt" data-act="txt" rows="1" aria-label="${it.lv?"하위 할 일":"할 일"}" title="Enter 새 줄 · Tab 들여쓰기 · Shift+Tab 내어쓰기">${esc(it.t)}</textarea>${kids.length||it.n||(it.who||[]).length?`<div class="meta">${kids.length?`<span class="kids num">${kd}/${kids.length}</span>`:""}${it.n?`<input data-act="note" value="${esc(it.n)}" aria-label="메모">`:""}${(it.who||[]).length?`<span class="whos" data-act="who" role="button" tabindex="0" title="유관자 바꾸기">${it.who.map(whoChip).join("")}</span>`:""}</div>`:""}</div>
+        <div class="mid"><textarea class="txt" data-act="txt" rows="1" aria-label="${it.lv?"하위 할 일":"할 일"}" title="Enter 새 줄 · Tab 들여쓰기 · Shift+Tab 내어쓰기">${esc(it.t)}</textarea>${it.n||(it.who||[]).length?`<div class="meta">${it.n?`<input data-act="note" value="${esc(it.n)}" aria-label="메모">`:""}${(it.who||[]).length?`<span class="whos" data-act="who" role="button" tabindex="0" title="유관자 바꾸기">${it.who.map(whoChip).join("")}</span>`:""}</div>`:""}</div>
         <div class="side"><button class="icon-btn whobtn" data-act="who" title="유관자 추가" aria-label="유관자 추가">@▾</button>${it.lv?`<span class="slot"></span>`:`<button class="icon-btn" data-act="addsub" title="하위 할 일 추가" aria-label="하위 할 일 추가">＋</button>`}<button class="icon-btn" data-act="todb" title="업무DB로 보내기">DB</button><button class="icon-btn" data-act="del" title="지우기" aria-label="지우기">×</button></div></div>`; }).join("")}
      <input class="addtodo" data-add="${i}" placeholder="+ 할 일 적고 Enter" aria-label="${dlabel} 할 일 추가">
     </div>`;
@@ -1103,6 +1114,55 @@ function rWeek(){
       const ds=ymd(addDays(S.weekStart,Number(row.dataset.di)));
       taskForm({id:"t"+Date.now().toString(36),name:it.t,start:ds,end:"",time:"",owner:"",cat:"운영",place:"",status:it.s==="done"?"완료":it.s==="cancel"?"취소":"예정",hist:false}, true);
     };
+  });
+  /* drag & drop to reorder to-dos (within a day or to another day); a parent moves with its sub-items */
+  let wdrag=null;
+  const clearMarks=()=>$("#view").querySelectorAll(".drop-above,.drop-below,.day-drop").forEach(x=>x.classList.remove("drop-above","drop-below","day-drop"));
+  const moveTo=(drag,di2,tgt,below,withKids)=>{
+    const src=w.days[drag.di].items, j=drag.j, first=src[j];
+    const kids=first.lv?[]:childrenOf(src,j);
+    const idxs=withKids?[j,...kids]:[j], block=idxs.map(k=>src[k]);
+    if(tgt && block.includes(tgt)) return false;
+    if(!withKids && tgt && kids.map(k=>src[k]).includes(tgt)) { /* dropping the parent among its own children: they become top-level anyway */ }
+    if(!withKids) kids.forEach(k=>delete src[k].lv);   // children left behind are outdented
+    for(let k=idxs.length-1;k>=0;k--) src.splice(idxs[k],1);
+    const dest=w.days[di2].items;
+    let at=dest.length;
+    if(tgt){ const ti=dest.indexOf(tgt); at=below?ti+1+(!tgt.lv&&!first.lv?childrenOf(dest,ti).length:0):ti; }
+    dest.splice(at,0,...block);
+    if(at===0 && block[0].lv) delete block[0].lv;
+    return true;
+  };
+  // a parent with sub-items asks whether to bring them along
+  const doMove=(di2,tgt,below)=>{
+    const drag={...wdrag}; wdrag=null;
+    const src=w.days[drag.di].items, first=src[drag.j], kids=first&&!first.lv?childrenOf(src,drag.j):[];
+    const go=withKids=>{ if(moveTo(drag,di2,tgt,below,withKids)){ saveWeekSoon(); render(); } };
+    if(!kids.length) return go(true);
+    if(tgt && kids.map(k=>src[k]).includes(tgt)) return;
+    openDlg(`<button class="dlg-x" id="mv-x" title="상위만 옮기기" aria-label="상위 할 일만 옮기기">×</button><h3>하위 할 일도 같이 옮길까요?</h3>
+     <p class="muted" style="margin:0 0 6px">'${esc(first.t||"할 일")}' 아래에 하위 할 일이 ${kids.length}개 있어요.</p>
+     <p class="muted small" style="margin:0">× 를 누르면 상위 할 일만 옮기고, 남은 하위 할 일은 자동으로 내어쓰기돼요.</p>
+     <div class="dlg-foot"><button class="btn" id="mv-one">상위만 옮기기</button><button class="btn btn-main" id="mv-all">확인 (같이 옮기기)</button></div>`);
+    $("#mv-all").onclick=()=>{ closeDlg(); go(true); };
+    $("#mv-one").onclick=$("#mv-x").onclick=()=>{ closeDlg(); go(false); };
+    $("#mv-all").focus();
+  };
+  $("#view").querySelectorAll(".trow").forEach(row=>{
+    const di=Number(row.dataset.di), j=Number(row.dataset.j), grip=row.querySelector(".grip");
+    grip.onmousedown=()=>{ row.draggable=true; };
+    row.onmouseup=()=>{ row.draggable=false; };
+    row.ondragstart=e=>{ wdrag={di,j}; e.dataTransfer.effectAllowed="move"; try{ e.dataTransfer.setData("text/plain","todo"); }catch{} row.classList.add("dragging"); };
+    row.ondragend=()=>{ row.draggable=false; row.classList.remove("dragging"); clearMarks(); wdrag=null; };
+    row.ondragover=e=>{ if(!wdrag) return; e.preventDefault(); e.stopPropagation(); clearMarks(); const r=row.getBoundingClientRect(); row.classList.add(e.clientY>r.top+r.height/2?"drop-below":"drop-above"); };
+    row.ondrop=e=>{ if(!wdrag) return; e.preventDefault(); e.stopPropagation(); clearMarks(); const r=row.getBoundingClientRect(), below=e.clientY>r.top+r.height/2;
+      doMove(di,w.days[di].items[j],below); };
+  });
+  $("#view").querySelectorAll(".dayblock").forEach(blk=>{
+    const di=Number(blk.dataset.di);
+    blk.ondragover=e=>{ if(!wdrag) return; e.preventDefault(); clearMarks(); blk.classList.add("day-drop"); };
+    blk.ondragleave=e=>{ if(!blk.contains(e.relatedTarget)) blk.classList.remove("day-drop"); };
+    blk.ondrop=e=>{ if(!wdrag) return; e.preventDefault(); clearMarks(); doMove(di,null,true); };
   });
 }
 
