@@ -303,7 +303,6 @@ select.inp,input.inp,textarea.inp{border:1px solid var(--line);background:var(--
 .lines .ln:focus{outline:none;background:color-mix(in srgb,var(--today) 45%,transparent)}
 .dayhead{display:flex;align-items:baseline;gap:10px}
 .dayhead .d{font-family:var(--f-head);font-size:16px;font-weight:700;white-space:nowrap;border:0;background:transparent;padding:2px 8px;margin-left:-8px;border-radius:7px;color:var(--ink)}
-.dayhead .d:hover{background:var(--paper-2)}
 .dayhead .d.sun{color:var(--red)}
 .daymemo{flex:1;border:0;border-bottom:1px dashed transparent;background:transparent;font-family:var(--f-hand);font-size:13.5px;color:var(--green);min-width:0}
 .dayblock.focus .d,.dayblock.focus .d.sun{background:var(--navy);color:var(--paper)}
@@ -1026,6 +1025,19 @@ function render(){
 function editingInView(){ const a=document.activeElement; return a && $("#view").contains(a) && /INPUT|TEXTAREA/.test(a.tagName); }
 function softRender(){ if(dlg.open || editingInView() || $("#pop")){ dirty=true; return; } render(); }
 document.addEventListener("focusout",()=>setTimeout(()=>{ if(dirty && !editingInView() && !dlg.open){ dirty=false; render(); } },0));
+/* 날짜가 바뀌면(자정이 지나거나, 어제 열어 둔 창으로 돌아오면) 오늘 기준으로 다시 그리기 */
+let shownDay=todayStr();
+function checkDayChange(){
+  const now=todayStr(); if(now===shownDay) return;
+  const old=pd(shownDay); shownDay=now;
+  if(ymd(S.weekStart)===ymd(mondayOf(old))) S.weekStart=mondayOf(new Date());   // 보고 있던 게 '이번 주'였으면 새 이번 주로
+  if(ym(S.cur)===ym(old)) S.cur=new Date();                                         // 보고 있던 게 '이번 달'이었으면 새 이번 달로
+  softRender();
+}
+setInterval(checkDayChange,30000);
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") checkDayChange(); });
+window.addEventListener("focus",checkDayChange);
+window.addEventListener("pageshow",checkDayChange);
 
 function evRow(t){ const c=CAT_COLOR[t.cat]||CAT_COLOR[""];
   return `<div class="ev s-${t.status} ${t.status==="취소"?"cancel":""}" data-tid="${t.id}" title="${esc(t.name)}${t.time?" · "+esc(t.time):""}"><span class="st" style="color:${ST_COLOR[t.status]}">${ST_ICON[t.status]||""}</span><span class="dot" style="background:${c}"></span><span class="t">${esc(t.name)}</span>${t.desc?`<span class="dsc" title="상세 내용 있음">≡</span>`:""}${t.rec?`<span class="rp" title="반복 일정">↻</span>`:""}</div>`; }
@@ -1154,8 +1166,8 @@ function rWeek(){
     const dlabel=weekend?`${md(ds)}–${md(ymd(addDays(mon,6)))} 주말`:`${date.getMonth()+1}/${date.getDate()} ${DOW[date.getDay()]}`;
     const refs=all().filter(t=>covers(t,ds)||(weekend&&covers(t,ymd(addDays(mon,6)))));
     const ln=(key,val,ph)=>`<div class="wm" aria-hidden="true"></div><div class="wr"><input class="ln" data-line="${key}" value="${esc(val||"")}" ${ph?`placeholder="${ph}"`:""} aria-label="옆 메모"></div>`;
-    return `<div class="dayblock ${d.hl?"focus":""}" data-di="${i}">
-     <div class="wl dh"><div class="dayhead"><button class="d ${weekend||holName(ds)?"sun":""}" data-hl="${i}" aria-pressed="${!!d.hl}" title="눌러서 오늘 표시 켜기/끄기">${dlabel}</button>${holName(ds)?`<span class="hol">${esc(holName(ds))}</span>`:""}${leaveOn(ds)?lvTag(leaveOn(ds)):""}<input class="daymemo" data-memo="${i}" value="${esc(d.memo)}" placeholder="* 일정 메모" aria-label="${dlabel} 메모"></div>
+    return `<div class="dayblock ${ds===todayStr()?"focus":""}" data-di="${i}">
+     <div class="wl dh"><div class="dayhead"><span class="d ${weekend||holName(ds)?"sun":""}" ${ds===todayStr()?'aria-current="date"':""}>${dlabel}</span>${holName(ds)?`<span class="hol">${esc(holName(ds))}</span>`:""}${leaveOn(ds)?lvTag(leaveOn(ds)):""}<input class="daymemo" data-memo="${i}" value="${esc(d.memo)}" placeholder="* 일정 메모" aria-label="${dlabel} 메모"></div>
      ${refs.length?`<div class="dbref">${refs.map(t=>`<span class="chip" title="업무DB"><i class="dot" style="background:${CAT_COLOR[t.cat]||CAT_COLOR[""]}"></i>${esc(t.name)}</span>`).join("")}</div>`:""}</div>
      ${d.items.map((it,j)=>{
        return `<div class="wl trow ${it.s} ${it.lv?"sub":""}" data-di="${i}" data-j="${j}"><span class="grip" title="끌어서 순서 바꾸기" aria-hidden="true">⠿</span>
@@ -1226,7 +1238,6 @@ function rWeek(){
   sortable(symBtns,"sym",S.symbols,arr=>{ S.symbols=arr; saveSymbols(); dirty=false; render(); });
   $("#symadd").onmousedown=e=>e.preventDefault();
   $("#symadd").onclick=e=>{ e.stopPropagation(); symPop($("#symadd")); };
-  $("#view").querySelectorAll("[data-hl]").forEach(b=>b.onclick=()=>{ const d=w.days[b.dataset.hl]; if(d.hl) delete d.hl; else d.hl=true; saveWeekSoon(); render(); });
   $("#view").querySelectorAll("[data-memo]").forEach(el=>el.oninput=()=>{w.days[el.dataset.memo].memo=el.value;saveWeekSoon();});
   $("#view").querySelectorAll("[data-add]").forEach(el=>el.onkeydown=e=>{
     if(e.key!=="Enter"||e.isComposing||!el.value.trim()) return;
