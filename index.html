@@ -285,8 +285,22 @@ select.inp,input.inp,textarea.inp{border:1px solid var(--line);background:var(--
 .page-top{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--navy);padding-bottom:6px;margin-bottom:10px;gap:10px}
 .page-top .wk{font-family:var(--f-head);font-size:18px;font-weight:700;color:var(--ink)}
 .topmemo{flex:1;border:0;background:transparent;font-family:var(--f-hand);font-size:13.5px;color:var(--red);min-width:0}
+/* week spread as one grid: every left row has its own right-page line at the same height */
+.wgrid{position:relative;grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr);padding:18px 0 22px}
+.wgrid::after{content:"";position:absolute;top:0;bottom:0;left:calc(50% - 13px);width:26px;background:radial-gradient(circle at 50% 50%,var(--desk) 4px,transparent 4.5px) 0 0/26px 26px repeat-y,linear-gradient(90deg,transparent 11px,var(--line) 11px,var(--line) 15px,transparent 15px);pointer-events:none}
+.wl{padding-left:20px;padding-right:12px;min-width:0}
+.wr{padding-left:12px;padding-right:20px;min-width:0;border-bottom:1px solid var(--line);display:flex;align-items:flex-start}
+.wm{min-width:0}
+.wgrid>.page-top{margin-bottom:0}
+.wgrid>.wr.page-top{border-bottom:2px solid var(--navy)}
 .dayblock{padding:8px 0 10px;border-bottom:2px solid var(--day-sep)}
 .dayblock:last-of-type{border-bottom:0}
+.dayblock.day-drop{background:var(--paper-2);border-radius:8px}
+.wl.dh.flash{animation:flash 1.6s ease}
+/* FREE NOTE: evenly ruled lines, each one clickable */
+.lines{display:flex;flex-direction:column}
+.lines .ln{display:block;width:100%;height:30px;border:0;border-bottom:1px solid var(--rule);background:transparent;font-family:var(--f-hand);font-size:14px;color:var(--ink);padding:0 4px;border-radius:0}
+.lines .ln:focus{outline:none;background:color-mix(in srgb,var(--today) 45%,transparent)}
 .dayhead{display:flex;align-items:baseline;gap:10px}
 .dayhead .d{font-family:var(--f-head);font-size:16px;font-weight:700;white-space:nowrap;border:0;background:transparent;padding:2px 8px;margin-left:-8px;border-radius:7px;color:var(--ink)}
 .dayhead .d:hover{background:var(--paper-2)}
@@ -303,7 +317,6 @@ select.inp,input.inp,textarea.inp{border:1px solid var(--line);background:var(--
 .trow.dragging{opacity:.4}
 .trow.drop-above{box-shadow:0 -2px 0 var(--navy)}
 .trow.drop-below{box-shadow:0 2px 0 var(--navy)}
-.dayblock.day-drop{background:var(--paper-2);border-radius:8px}
 @media (hover:none){.trow .grip{opacity:.5}}
 .outbtn{position:absolute;left:0;top:6px;width:22px;height:22px;border:0;border-radius:6px;background:transparent;color:var(--ink-3);font-size:13px;padding:0;line-height:1}
 .outbtn:hover{background:var(--navy);color:var(--paper)}
@@ -510,8 +523,12 @@ dialog::backdrop{background:rgba(20,18,28,.35)}
 
 @media (max-width:860px){
   .week-spread{grid-template-columns:1fr}
-  .spiral{height:22px;background:radial-gradient(circle,var(--desk) 4px,transparent 4.5px) 0 0/26px 22px repeat-x}
-  .freenote{min-height:420px}
+  .wgrid::after,.wgrid .wm{display:none}
+  .wgrid .wr{padding-left:52px;border-bottom:1px dashed var(--line)}
+  .wgrid .wr .ln::placeholder{color:var(--ink-3)}
+  .wgrid .wr.dh{border-top:0;padding-top:0}
+  .wgrid>.wr.page-top{padding-left:20px;margin-top:14px}
+  .wl.blank:not(.legend-cell){display:none}
   .grid2,.fb-grid,.carry{grid-template-columns:1fr}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -1030,7 +1047,7 @@ function rMonth(){
     c.onkeydown=e=>{ if((e.key==="Enter"||e.key===" ")&&e.target===c){ e.preventDefault(); c.click(); } };
   });
   $("#view").querySelectorAll(".day").forEach(b=>b.onclick=e=>{
-    if(e.target.closest(".tdb")){ const d=pd(b.dataset.day); S.weekStart=mondayOf(d); const w=weekDoc(), i=(d.getDay()+6)%7; S.tab="week"; try{localStorage.setItem("wd-tab","week");}catch{} render(); const blk=$(`.dayblock[data-di="${i}"]`); if(blk) blk.scrollIntoView({block:"start",behavior:"smooth"}); return; }
+    if(e.target.closest(".tdb")){ const d=pd(b.dataset.day); S.weekStart=mondayOf(d); const w=weekDoc(), i=(d.getDay()+6)%7; S.tab="week"; try{localStorage.setItem("wd-tab","week");}catch{} render(); const blk=$(`.dayblock[data-di="${i}"] .wl.dh`); if(blk) blk.scrollIntoView({block:"start",behavior:"smooth"}); return; }
     const ev=e.target.closest(".ev[data-tid]"); const t=ev&&findTask(ev.dataset.tid); if(t) taskForm(t); else dayDlg(b.dataset.day); });
   $("#holmgr").onclick=()=>holDlg(String(y));
   $("#catmgr").onclick=()=>catDlg();
@@ -1105,42 +1122,75 @@ function rWeek(){
     const date=addDays(mon,i), ds=ymd(date), weekend=i===5;
     const dlabel=weekend?`${md(ds)}–${md(ymd(addDays(mon,6)))} 주말`:`${date.getMonth()+1}/${date.getDate()} ${DOW[date.getDay()]}`;
     const refs=all().filter(t=>covers(t,ds)||(weekend&&covers(t,ymd(addDays(mon,6)))));
+    const ln=(key,val,ph)=>`<div class="wm" aria-hidden="true"></div><div class="wr"><input class="ln" data-line="${key}" value="${esc(val||"")}" ${ph?`placeholder="${ph}"`:""} aria-label="옆 메모"></div>`;
     return `<div class="dayblock ${d.hl?"focus":""}" data-di="${i}">
-     <div class="dayhead"><button class="d ${weekend||holName(ds)?"sun":""}" data-hl="${i}" aria-pressed="${!!d.hl}" title="눌러서 오늘 표시 켜기/끄기">${dlabel}</button>${holName(ds)?`<span class="hol">${esc(holName(ds))}</span>`:""}${leaveOn(ds)?lvTag(leaveOn(ds)):""}<input class="daymemo" data-memo="${i}" value="${esc(d.memo)}" placeholder="* 일정 메모" aria-label="${dlabel} 메모"></div>
-     ${refs.length?`<div class="dbref">${refs.map(t=>`<span class="chip" title="업무DB"><i class="dot" style="background:${CAT_COLOR[t.cat]||CAT_COLOR[""]}"></i>${esc(t.name)}</span>`).join("")}</div>`:""}
-     ${d.items.map((it,j)=>{ const kids=it.lv?[]:childrenOf(d.items,j); const kd=kids.filter(k=>d.items[k].s==="done").length;
-       return `<div class="trow ${it.s} ${it.lv?"sub":""}" data-di="${i}" data-j="${j}"><span class="grip" title="끌어서 순서 바꾸기" aria-hidden="true">⠿</span>
+     <div class="wl dh"><div class="dayhead"><button class="d ${weekend||holName(ds)?"sun":""}" data-hl="${i}" aria-pressed="${!!d.hl}" title="눌러서 오늘 표시 켜기/끄기">${dlabel}</button>${holName(ds)?`<span class="hol">${esc(holName(ds))}</span>`:""}${leaveOn(ds)?lvTag(leaveOn(ds)):""}<input class="daymemo" data-memo="${i}" value="${esc(d.memo)}" placeholder="* 일정 메모" aria-label="${dlabel} 메모"></div>
+     ${refs.length?`<div class="dbref">${refs.map(t=>`<span class="chip" title="업무DB"><i class="dot" style="background:${CAT_COLOR[t.cat]||CAT_COLOR[""]}"></i>${esc(t.name)}</span>`).join("")}</div>`:""}</div>
+     ${d.items.map((it,j)=>{
+       return `<div class="wl trow ${it.s} ${it.lv?"sub":""}" data-di="${i}" data-j="${j}"><span class="grip" title="끌어서 순서 바꾸기" aria-hidden="true">⠿</span>
         ${it.lv?`<button class="outbtn" data-act="out" title="내어쓰기 (상위 할 일로)" aria-label="내어쓰기">⇤</button>`:""}<button class="chk ${it.s}" data-act="chk" aria-label="상태 바꾸기">${CHK[it.s]}</button>
         <div class="mid"><textarea class="txt" data-act="txt" rows="1" aria-label="${it.lv?"하위 할 일":"할 일"}" title="Enter 새 줄 · Tab 들여쓰기 · Shift+Tab 내어쓰기">${esc(it.t)}</textarea>${it.n||(it.who||[]).length?`<div class="meta">${it.n?`<input data-act="note" value="${esc(it.n)}" aria-label="메모">`:""}${(it.who||[]).length?`<span class="whos" data-act="who" role="button" tabindex="0" title="유관자 바꾸기">${it.who.map(whoChip).join("")}</span>`:""}</div>`:""}</div>
         <div class="side"><button class="icon-btn whobtn" data-act="who" title="유관자 추가" aria-label="유관자 추가">@▾</button>${it.lv?`<span class="slot"></span>`:`<button class="icon-btn" data-act="addsub" title="하위 할 일 추가" aria-label="하위 할 일 추가">＋</button>`}<button class="icon-btn" data-act="todb" title="업무DB로 보내기">DB</button><button class="icon-btn" data-act="del" title="지우기" aria-label="지우기">×</button></div></div>`; }).join("")}
-     <input class="addtodo" data-add="${i}" placeholder="+ 할 일 적고 Enter" aria-label="${dlabel} 할 일 추가">
+     <div class="wl addrow"><input class="addtodo" data-add="${i}" placeholder="+ 할 일 적고 Enter" aria-label="${dlabel} 할 일 추가"></div>
     </div>`;
   };
+  // FREE NOTE = evenly ruled lines (one input per line). Older data is flattened into lines in reading order.
+  const hasSide=w.days.some(d=>d.side||d.aside||d.items.some(it=>it.side));
+  if(!Array.isArray(w.lines)) w.lines=(w.note||"").split("\n");
+  else if(hasSide){
+    const flat=[]; w.days.slice(0,5).forEach(d=>{ flat.push(d.side||""); d.items.forEach(it=>flat.push(it.side||"")); flat.push(d.aside||""); });
+    w.lines=[...flat,...w.lines.map(x=>x||"")];
+  }
+  if(hasSide) w.days.forEach(d=>{ delete d.side; delete d.aside; d.items.forEach(it=>delete it.side); });
+  while(w.lines.length&&!w.lines[w.lines.length-1]) w.lines.pop();
+  if(hasSide){ w.note=w.lines.join("\n"); saveWeekSoon(); }
+  const lineN=Math.max(26,w.lines.length+4);
+  const lineHTML=Array.from({length:lineN},(_,k)=>`<input class="ln" data-line="f:${k}" value="${esc(w.lines[k]||"")}" aria-label="프리노트 ${k+1}번째 줄">`).join("");
   $("#view").innerHTML=`
    <div class="sheet-head" style="margin-bottom:12px"><div class="titlenav"><button class="arrow" id="wp" aria-label="이전 주">‹</button><h2 style="color:var(--ink)"><button class="titlebtn" id="wpick" aria-haspopup="dialog" title="주 선택">${mon.getFullYear()}년 ${mon.getMonth()+1}월 ${Math.ceil(mon.getDate()/7)}주차 <span class="wk-range">${md(ymd(mon))}~${md(ymd(addDays(mon,4)))}</span><span class="caret">▾</span></button></h2><button class="arrow" id="wn" aria-label="다음 주">›</button>${ymd(mon)===ymd(mondayOf(new Date()))?"":`<button class="btn btn-xs" id="wt">이번 주</button>`}</div>
     <div class="wk-progress" style="margin-left:auto"><span>완료 ${done}/${live}</span><div class="bar" style="width:120px"><i style="width:${pct}%;background:var(--green)"></i></div><span class="num">${pct}%</span></div></div>
    <div class="week-spread">
-    <div class="page">
-      <div class="page-top"><input class="topmemo" id="topmemo" value="${esc(w.top)}" placeholder="* 이번 주 메모 (연차, 일정)"><span class="wk">${label}</span></div>
-      ${w.days.slice(0,5).map(dayBlock).join("")}
-      <div class="chk-legend"><span>□ 할 일</span><span style="color:var(--red)">☑ 완료</span><span style="color:var(--navy)">→ 이월</span><span>✕ 취소</span><span>체크 칸을 누를 때마다 바뀌어요 · ＋ 하위 할 일 추가 · ⇤ 하위 할 일 내어쓰기 · Enter 다음 줄 · DB 버튼은 업무DB로 옮겨 적기</span></div>
+    <div class="page" id="lpage">
+     <div class="page-top"><input class="topmemo" id="topmemo" value="${esc(w.top)}" placeholder="* 이번 주 메모 (연차, 일정)"><span class="wk">${label}</span></div>
+     ${w.days.slice(0,5).map(dayBlock).join("")}
+     <div class="chk-legend"><span>□ 할 일</span><span style="color:var(--red)">☑ 완료</span><span style="color:var(--navy)">→ 이월</span><span>✕ 취소</span><span>체크 칸을 누를 때마다 바뀌어요 · ＋ 하위 할 일 · ⇤ 내어쓰기 · ⠿ 끌어서 옮기기 · DB 버튼은 업무DB로</span></div>
     </div>
     <div class="spiral" aria-hidden="true"></div>
-    <div class="page">
-      <div class="page-top"><span class="symbar"><span class="wk">FREE NOTE</span>${S.symbols.map(s=>`<button class="symbtn" data-sym="${esc(s)}" title="'${esc(s)}' 넣기">${esc(s)}</button>`).join("")}<button class="symbtn symadd" id="symadd" title="특수문자 추가" aria-label="특수문자 추가">+</button></span><span class="muted small">${md(ymd(mon))} ~ ${md(ymd(addDays(mon,4)))}</span></div>
-      <textarea class="freenote" id="freenote" aria-label="프리노트" placeholder="자유롭게 메모하세요">${esc(w.note)}</textarea>
+    <div class="page" id="rpage">
+     <div class="page-top"><span class="symbar"><span class="wk">FREE NOTE</span>${S.symbols.map(s=>`<button class="symbtn" data-sym="${esc(s)}" title="'${esc(s)}' 넣기">${esc(s)}</button>`).join("")}<button class="symbtn symadd" id="symadd" title="특수문자 추가" aria-label="특수문자 추가">+</button></span><span class="muted small">${md(ymd(mon))} ~ ${md(ymd(addDays(mon,4)))}</span></div>
+     <div class="lines" id="lines">${lineHTML}</div>
     </div>
    </div>`;
   $("#wp").onclick=()=>{S.weekStart=addDays(S.weekStart,-7);render();}; $("#wn").onclick=()=>{S.weekStart=addDays(S.weekStart,7);render();}; $("#wpick").onclick=e=>{ e.stopPropagation(); if($("#pop")&&popState?.key==="wpick") return dismissWho(); weekPicker($("#wpick")); }; if($("#wt")) $("#wt").onclick=()=>{S.weekStart=mondayOf(new Date());render();};
   $("#topmemo").oninput=e=>{w.top=e.target.value;saveWeekSoon();};
-  const fn=$("#freenote");
-  fn.oninput=e=>{w.note=e.target.value;saveWeekSoon();};
-  let ca=null, cz=null; const keep=()=>{ ca=fn.selectionStart; cz=fn.selectionEnd; };
-  ["keyup","mouseup","select","blur"].forEach(ev=>fn.addEventListener(ev,keep));
+  /* right-page lines: each one sits beside the matching left row; click any line and type */
+  // fill the right page with ruled lines down to the bottom of the left page
+  { const lp=$("#lpage"), box=$("#lines"); let n=box.children.length, guard=0;
+    while(lp && box.parentElement.scrollHeight<lp.scrollHeight && guard++<200){ box.insertAdjacentHTML("beforeend",`<input class="ln" data-line="f:${n}" value="" aria-label="프리노트 ${n+1}번째 줄">`); n++; } }
+  const lineSet=(key,v)=>{ const p=key.split(":"), i=Number(p[1]);
+    if(p[0]==="f"){ for(let x=0;x<i;x++) if(w.lines[x]==null) w.lines[x]=""; w.lines[i]=v; while(w.lines.length&&!w.lines[w.lines.length-1]) w.lines.pop(); w.note=w.lines.join("\n"); } };
+  let lastLn=null, ca=null, cz=null;
+  const lns=()=>[...$("#view").querySelectorAll(".ln")];
+  lns().forEach(el=>{
+    el.oninput=()=>{ lineSet(el.dataset.line,el.value); saveWeekSoon(); };
+    const keep=()=>{ lastLn=el.dataset.line; ca=el.selectionStart; cz=el.selectionEnd; };
+    ["keyup","mouseup","select","blur","focus"].forEach(ev=>el.addEventListener(ev,keep));
+    el.onkeydown=e=>{
+      if(e.isComposing) return;
+      const all_=lns(), ix=all_.indexOf(el);
+      const go=(t,atEnd)=>{ if(!t) return; t.focus(); const p=atEnd?t.value.length:Math.min(el.selectionStart,t.value.length); t.setSelectionRange(p,p); };
+      if(e.key==="Enter"||e.key==="ArrowDown"){ e.preventDefault();
+        if(ix===all_.length-1){ w.lines.push(""); const key=el.dataset.line; render(); const nl=lns(); go(nl[nl.findIndex(x=>x.dataset.line===key)+1],true); }
+        else go(all_[ix+1],e.key==="Enter"); }
+      else if(e.key==="ArrowUp"){ e.preventDefault(); go(all_[ix-1]); }
+      else if(e.key==="Backspace"&&!el.value&&ix>0){ e.preventDefault(); go(all_[ix-1],true); }
+    };
+  });
   const symBtns=[...$("#view").querySelectorAll("[data-sym]")];
-  symBtns.forEach(b=>{ b.onclick=()=>{
-    const s=b.dataset.sym, a=ca??fn.value.length, z=cz??a;
-    fn.focus(); fn.setRangeText(s,a,z,"end"); keep(); w.note=fn.value; saveWeekSoon(); }; });
+  symBtns.forEach(b=>{ b.onmousedown=e=>e.preventDefault(); b.onclick=()=>{
+    const el=(lastLn&&$(`.ln[data-line="${lastLn}"]`))||$('.ln[data-line="f:0"]'); if(!el) return;
+    const s=b.dataset.sym, a=ca??el.value.length, z=cz??a;
+    el.focus(); el.setRangeText(s,a,z,"end"); ca=cz=el.selectionStart; lineSet(el.dataset.line,el.value); saveWeekSoon(); }; });
   sortable(symBtns,"sym",S.symbols,arr=>{ S.symbols=arr; saveSymbols(); dirty=false; render(); });
   $("#symadd").onmousedown=e=>e.preventDefault();
   $("#symadd").onclick=e=>{ e.stopPropagation(); symPop($("#symadd")); };
@@ -1733,8 +1783,9 @@ function searchAll(q){
   const hit=s=>(s||"").toLowerCase().includes(q), out=[];
   all().forEach(t=>{ if(hit(t.name)||hit(t.desc)||hit(t.place)||hit(t.owner)) out.push({g:"업무DB",title:t.name,sub:`${t.start?md(t.start):"날짜 없음"} · ${t.status}${hit(t.desc)&&!hit(t.name)?" · 상세 내용":""}`,snip:hit(t.desc)?t.desc:"",go:()=>taskForm(findTask(t.id))}); });
   Object.keys(S.weeks).sort().reverse().forEach(k=>{ const w=S.weeks[k], mon=pd(k);
-    w.days.slice(0,5).forEach((d,i)=>{ const ds=ymd(addDays(mon,i)), go=()=>{ S.detailId=null; S.tab="week"; S.weekStart=mon; render(); const b=$(`.dayblock[data-di="${i}"]`); if(b){ b.scrollIntoView({block:"center"}); b.classList.add("flash"); setTimeout(()=>b.classList.remove("flash"),1600); } };
+    w.days.slice(0,5).forEach((d,i)=>{ const ds=ymd(addDays(mon,i)), go=()=>{ S.detailId=null; S.tab="week"; S.weekStart=mon; render(); const b=$(`.dayblock[data-di="${i}"] .wl.dh`); if(b){ b.scrollIntoView({block:"center"}); b.classList.add("flash"); setTimeout(()=>b.classList.remove("flash"),1600); } };
       if(hit(d.memo)) out.push({g:"주간 다이어리",title:d.memo,sub:`${md(ds)} (${DOW[addDays(mon,i).getDay()]}) 메모`,go});
+      [d.side,d.aside,...d.items.map(it=>it.side)].forEach(s=>{ if(hit(s)) out.push({g:"주간 다이어리",title:s,sub:`${md(ds)} (${DOW[addDays(mon,i).getDay()]}) 프리노트`,go}); });
       d.items.forEach(it=>{ if(hit(it.t)||hit(it.n)||(it.who||[]).some(hit)) out.push({g:"주간 다이어리",title:it.t,sub:`${md(ds)} (${DOW[addDays(mon,i).getDay()]}) · ${({todo:"할 일",done:"완료",moved:"이월",cancel:"취소"})[it.s]}${(it.who||[]).length?" · "+it.who.join(", "):""}`,go}); }); });
     const goW=()=>{ S.detailId=null; S.tab="week"; S.weekStart=mon; render(); };
     if(hit(w.note)) out.push({g:"주간 다이어리",title:"FREE NOTE",sub:`${md(k)} 주`,snip:w.note,go:goW});
@@ -1809,11 +1860,11 @@ function buildBackup(){
   add("업무DB",[["이름","시작일","종료일","시간","담당자","업무분류","장소","진행상황","히스토리","반복","상세 내용"],
     ...tasks.map(t=>[t.name,t.start,t.end,t.time,t.owner,t.cat||"미분류",t.place,t.status,t.hist?"Yes":"",t.rec?ruleLabel(ruleOf(t.rec)||{dows:[],freq:"weekly"}):"",t.desc||""])],[46,11,11,12,12,10,14,8,8,18,60]);
   const CHK_TXT={todo:"할 일",done:"완료",moved:"이월",cancel:"취소"};
-  const wrows=[["주 시작일","날짜","요일","날짜 메모","상태","할 일","비고","유관자"]], nrows=[["주 시작일","주 메모","프리노트"]];
+  const wrows=[["주 시작일","날짜","요일","날짜 메모","상태","할 일","비고","유관자","프리노트(옆 줄)"]], nrows=[["주 시작일","주 메모","프리노트"]];
   Object.keys(S.weeks).sort().forEach(k=>{ const w=S.weeks[k], mon=pd(k);
     w.days.slice(0,5).forEach((d,i)=>{ const dt=addDays(mon,i), ds=ymd(dt);
       if(!d.items.length && d.memo) wrows.push([k,ds,DOW[dt.getDay()],d.memo,"","",""]);
-      d.items.forEach((it,j)=>wrows.push([k,ds,DOW[dt.getDay()],j===0?d.memo:"",CHK_TXT[it.s]||it.s,(it.lv?"    └ ":"")+it.t,it.n||"",(it.who||[]).join(", ")])); });
+      d.items.forEach((it,j)=>wrows.push([k,ds,DOW[dt.getDay()],j===0?d.memo:"",CHK_TXT[it.s]||it.s,(it.lv?"    └ ":"")+it.t,it.n||"",(it.who||[]).join(", "),it.side||""])); });
     if(w.top||w.note) nrows.push([k,w.top||"",w.note||""]); });
   add("주간다이어리",wrows,[11,11,5,22,7,50,16]);
   add("주간 프리노트",nrows,[11,24,90]);
