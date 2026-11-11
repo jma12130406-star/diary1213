@@ -421,7 +421,7 @@ button.pk-week:hover{border-color:var(--navy);background:var(--paper-2)}
 .trow .side{display:flex;align-items:center;gap:2px;font-size:12.5px;color:var(--navy)}
 .addtodo{width:100%;border:0;background:transparent;font-family:var(--f-hand);font-size:13.5px;padding:6px 0 6px 32px;color:var(--ink)}
 .addtodo::placeholder{color:var(--ink-3)}
-.freenote{width:100%;min-height:760px;border:0;resize:vertical;background:transparent;font-family:var(--f-hand);font-size:14px;line-height:30px;color:var(--ink);background-image:linear-gradient(transparent 29px,var(--rule) 29px);background-size:100% 30px;padding:0 4px;background-attachment:local}
+.freenote{display:block;width:100%;border:0;resize:none;overflow:hidden;background:transparent;font-family:var(--f-hand);font-size:14px;line-height:30px;color:var(--ink);background-image:linear-gradient(transparent 29px,var(--rule) 29px);background-size:100% 30px;padding:0 4px;background-attachment:local}
 .freenote:focus{outline:none}
 .wk-progress{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-2)}
 .bar{height:8px;border-radius:99px;background:var(--paper-2);overflow:hidden;flex:1;min-width:80px;display:flex}
@@ -1189,7 +1189,7 @@ function rWeek(){
   while(w.lines.length&&!w.lines[w.lines.length-1]) w.lines.pop();
   if(hasSide){ w.note=w.lines.join("\n"); saveWeekSoon(); }
   const lineN=Math.max(26,w.lines.length+4);
-  const lineHTML=Array.from({length:lineN},(_,k)=>`<input class="ln" data-line="f:${k}" value="${esc(w.lines[k]||"")}" aria-label="프리노트 ${k+1}번째 줄">`).join("");
+  const noteVal=Array.from({length:lineN},(_,k)=>w.lines[k]||"").join("\n");
   $("#view").innerHTML=`
    <div class="sheet-head" style="margin-bottom:12px"><div class="titlenav"><button class="arrow" id="wp" aria-label="이전 주">‹</button><h2 style="color:var(--ink)"><button class="titlebtn" id="wpick" aria-haspopup="dialog" title="주 선택">${mon.getFullYear()}년 ${mon.getMonth()+1}월 ${Math.ceil(mon.getDate()/7)}주차 <span class="wk-range">${md(ymd(mon))}~${md(ymd(addDays(mon,4)))}</span><span class="caret">▾</span></button></h2><button class="arrow" id="wn" aria-label="다음 주">›</button>${ymd(mon)===ymd(mondayOf(new Date()))?"":`<button class="btn btn-xs" id="wt">이번 주</button>`}</div>
     <div class="wk-progress" style="margin-left:auto"><span>완료 ${done}/${live}</span><div class="bar" style="width:120px"><i style="width:${pct}%;background:var(--green)"></i></div><span class="num">${pct}%</span></div></div>
@@ -1202,39 +1202,37 @@ function rWeek(){
     <div class="spiral" aria-hidden="true"></div>
     <div class="page" id="rpage">
      <div class="page-top"><span class="symbar"><span class="wk">FREE NOTE</span>${S.symbols.map(s=>`<button class="symbtn" data-sym="${esc(s)}" title="'${esc(s)}' 넣기">${esc(s)}</button>`).join("")}<button class="symbtn symadd" id="symadd" title="특수문자 추가" aria-label="특수문자 추가">+</button></span><span class="muted small">${md(ymd(mon))} ~ ${md(ymd(addDays(mon,4)))}</span></div>
-     <div class="lines" id="lines">${lineHTML}</div>
+     <textarea class="freenote" id="fnote" spellcheck="false" aria-label="프리노트 (Enter 다음 줄 · Shift+Enter 줄 나누기)">${esc(noteVal)}</textarea>
     </div>
    </div>`;
   $("#wp").onclick=()=>{S.weekStart=addDays(S.weekStart,-7);render();}; $("#wn").onclick=()=>{S.weekStart=addDays(S.weekStart,7);render();}; $("#wpick").onclick=e=>{ e.stopPropagation(); if($("#pop")&&popState?.key==="wpick") return dismissWho(); weekPicker($("#wpick")); }; if($("#wt")) $("#wt").onclick=()=>{S.weekStart=mondayOf(new Date());render();};
   $("#topmemo").oninput=e=>{w.top=e.target.value;saveWeekSoon();};
-  /* right-page lines: each one sits beside the matching left row; click any line and type */
-  // fill the right page with ruled lines down to the bottom of the left page
-  { const lp=$("#lpage"), box=$("#lines"); let n=box.children.length, guard=0;
-    while(lp && box.parentElement.scrollHeight<lp.scrollHeight && guard++<200){ box.insertAdjacentHTML("beforeend",`<input class="ln" data-line="f:${n}" value="" aria-label="프리노트 ${n+1}번째 줄">`); n++; } }
-  const lineSet=(key,v)=>{ const p=key.split(":"), i=Number(p[1]);
-    if(p[0]==="f"){ for(let x=0;x<i;x++) if(w.lines[x]==null) w.lines[x]=""; w.lines[i]=v; while(w.lines.length&&!w.lines[w.lines.length-1]) w.lines.pop(); w.note=w.lines.join("\n"); } };
-  let lastLn=null, ca=null, cz=null;
-  const lns=()=>[...$("#view").querySelectorAll(".ln")];
-  lns().forEach(el=>{
-    el.oninput=()=>{ lineSet(el.dataset.line,el.value); saveWeekSoon(); };
-    const keep=()=>{ lastLn=el.dataset.line; ca=el.selectionStart; cz=el.selectionEnd; };
-    ["keyup","mouseup","select","blur","focus"].forEach(ev=>el.addEventListener(ev,keep));
-    el.onkeydown=e=>{
-      if(e.isComposing) return;
-      const all_=lns(), ix=all_.indexOf(el);
-      const go=(t,atEnd)=>{ if(!t) return; t.focus(); const p=atEnd?t.value.length:Math.min(el.selectionStart,t.value.length); t.setSelectionRange(p,p); };
-      if(e.key==="Enter"||e.key==="ArrowDown"){ e.preventDefault();
-        if(ix===all_.length-1){ w.lines.push(""); const key=el.dataset.line; render(); const nl=lns(); go(nl[nl.findIndex(x=>x.dataset.line===key)+1],true); }
-        else go(all_[ix+1],e.key==="Enter"); }
-      else if(e.key==="ArrowUp"){ e.preventDefault(); go(all_[ix-1]); }
-      else if(e.key==="Backspace"&&!el.value&&ix>0){ e.preventDefault(); go(all_[ix-1],true); }
-    };
-  });
+  /* FREE NOTE: one ruled textarea, so a drag can select across lines.
+     Enter = go to the next line (keeps that line's text) · Shift+Enter = split the line at the cursor */
+  const fn=$("#fnote");
+  const fnFit=()=>{ const lp=$("#lpage"), top=fn.offsetTop-(lp?lp.offsetTop:0); fn.style.height="0px";
+    const want=Math.max(fn.scrollHeight, lp? lp.scrollHeight-top-8 : 0, lineN*30);
+    fn.style.height=Math.ceil(want/30)*30+"px"; };
+  const fnSave=()=>{ w.lines=fn.value.split("\n"); while(w.lines.length&&!w.lines[w.lines.length-1]) w.lines.pop(); w.note=w.lines.join("\n"); saveWeekSoon(); };
+  fnFit();
+  { const need=Math.round(fn.clientHeight/30)-fn.value.split("\n").length; if(need>0) fn.value+="\n".repeat(need); }   // blank ruled rows down to the page bottom
+  fn.oninput=()=>{ fnSave(); fnFit(); };
+  let ca=null, cz=null;
+  const keep=()=>{ ca=fn.selectionStart; cz=fn.selectionEnd; };
+  ["keyup","mouseup","select","blur","focus"].forEach(ev=>fn.addEventListener(ev,keep));
+  fn.onkeydown=e=>{
+    if(e.isComposing||e.key!=="Enter") return;
+    if(e.shiftKey) return;                              // Shift+Enter: normal newline = split the line here
+    e.preventDefault();
+    const v=fn.value, p=fn.selectionEnd, eol=v.indexOf("\n",p);
+    if(eol<0){ fn.setRangeText("\n",v.length,v.length,"end"); fnSave(); fnFit(); return; }   // last line: add a new one
+    const nEnd=v.indexOf("\n",eol+1), to=nEnd<0?v.length:nEnd;
+    fn.setSelectionRange(to,to);
+  };
   const symBtns=[...$("#view").querySelectorAll("[data-sym]")];
   symBtns.forEach(b=>{ b.onmousedown=e=>e.preventDefault(); b.onclick=()=>{
-    const el=(lastLn&&$(`.ln[data-line="${lastLn}"]`))||$('.ln[data-line="f:0"]'); if(!el) return;
-    const s=b.dataset.sym, a=ca??el.value.length, z=cz??a;
-    el.focus(); el.setRangeText(s,a,z,"end"); ca=cz=el.selectionStart; lineSet(el.dataset.line,el.value); saveWeekSoon(); }; });
+    const s=b.dataset.sym, a=ca??0, z=cz??a;
+    fn.focus(); fn.setRangeText(s,a,z,"end"); ca=cz=fn.selectionStart; fnSave(); }; });
   sortable(symBtns,"sym",S.symbols,arr=>{ S.symbols=arr; saveSymbols(); dirty=false; render(); });
   $("#symadd").onmousedown=e=>e.preventDefault();
   $("#symadd").onclick=e=>{ e.stopPropagation(); symPop($("#symadd")); };
