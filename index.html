@@ -180,6 +180,7 @@ mark{background:var(--today);color:inherit;border-radius:3px;padding:0 1px}
 @media (max-width:900px){.shell{grid-template-columns:minmax(0,1fr)}.wing{position:static;max-height:none;overflow:visible}.memos{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}}
 .btn{border:1px solid var(--line);background:var(--paper);border-radius:9px;padding:7px 12px;color:var(--ink)}
 .btn:hover{border-color:var(--ink-3)}
+a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .btn-xs{padding:1px 8px;font-size:12px;border-radius:6px;line-height:1.5}
 .btn-main{background:var(--navy);color:var(--paper);border-color:var(--navy);font-weight:600;padding:10px 16px;border-radius:10px}
 .btn-ghost{border-color:transparent;background:transparent}
@@ -243,25 +244,6 @@ select.inp,input.inp,textarea.inp{border:1px solid var(--line);background:var(--
 .ev:hover{box-shadow:0 0 0 1px var(--navy)}
 .ev.s-진행중,.kcard.s-진행중{background:var(--st-prog-bg)}
 .ev.s-완료,.kcard.s-완료{background:var(--st-done-bg)}
-/* 월간 달력: 일정 / 지출결의 탭 */
-.mseg{display:inline-flex;border:1px solid var(--line);border-radius:99px;padding:2px;background:var(--paper-2);gap:2px}
-.mseg button{border:0;background:transparent;padding:5px 14px;border-radius:99px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
-.mseg button:hover{color:var(--ink)}
-.mseg button[aria-selected=true]{background:var(--navy);color:#fff}
-.mseg.sm button{padding:3px 10px;font-size:12px}
-/* 일정/지출결의 버튼은 두 탭 모두 헤더 한가운데 같은 자리에 (좁은 화면은 줄 흐름대로) */
-@media (min-width:1120px){.sheet-head:has(>.mseg){position:relative;min-height:34px}.sheet-head>.mseg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}}
-a.xev{text-decoration:none;border-left:3px solid var(--sc);background:color-mix(in srgb,var(--sc) 13%,transparent);border-radius:3px;padding:1px 4px}
-a.xev:hover{background:color-mix(in srgb,var(--sc) 26%,transparent);box-shadow:none}
-.xev .xc{font-size:11px;font-weight:700;flex:none}
-/* 지연·임박: 지출결의 관리장과 같은 표시 (지연 = 빨간 실선 테두리, 임박 = 주황 점선 테두리) */
-.xev.due-late{outline:1.5px solid #c93434;outline-offset:-1.5px}
-.xev.due-soon{outline:1.5px dashed #b26a00;outline-offset:-1.5px}
-.xdue{display:inline-block;width:14px;height:10px;border-radius:2px}
-.xdue.late{border:1.5px solid #c93434} .xdue.soon{border:1.5px dashed #b26a00}
-.xday{cursor:default}
-.xempty{padding:10px 12px;margin-bottom:12px;border-radius:10px;background:var(--paper-2);font-size:13px;color:var(--ink-2)}
-.xsw{display:inline-block;width:14px;height:10px;border-left:3px solid var(--sc);background:color-mix(in srgb,var(--sc) 18%,transparent);border-radius:2px}
 .ev .st{font-size:12px;width:14px;flex:none;text-align:center}
 .more{font-size:13px;color:var(--ink-3)}
 .day .hol{font-size:11px;color:var(--red);font-weight:600;margin-left:6px}
@@ -1062,71 +1044,7 @@ function evRow(t){ const c=CAT_COLOR[t.cat]||CAT_COLOR[""];
   return `<div class="ev s-${t.status} ${t.status==="취소"?"cancel":""}" data-tid="${t.id}" title="${esc(t.name)}${t.time?" · "+esc(t.time):""}"><span class="st" style="color:${ST_COLOR[t.status]}">${ST_ICON[t.status]||""}</span><span class="dot" style="background:${c}"></span><span class="t">${esc(t.name)}</span>${t.desc?`<span class="dsc" title="상세 내용 있음">≡</span>`:""}${t.rec?`<span class="rp" title="반복 일정">↻</span>`:""}</div>`; }
 
 /* 1. month */
-/* 월간 달력 탭: 일정(내 업무) / 지출결의(지출결의 관리장 일정) */
-let MTAB=(()=>{ try{ return localStorage.getItem("wd-mtab")==="exp"?"exp":"plan"; }catch{ return "plan"; } })();
-const mSeg=()=>`<div class="mseg" role="tablist" aria-label="달력 종류">${[["plan","일정"],["exp","지출결의"]].map(([k,l])=>`<button role="tab" data-mt="${k}" aria-selected="${MTAB===k}">${l}</button>`).join("")}</div>`;
-function bindMonthHead(y,m){
-  $("#view").querySelectorAll("[data-mt]").forEach(b=>b.onclick=()=>{ if(MTAB===b.dataset.mt) return; MTAB=b.dataset.mt; try{ localStorage.setItem("wd-mtab",MTAB); }catch{} render(); });
-  $("#mp").onclick=()=>{S.cur=new Date(y,m-1,1);render();}; $("#mn").onclick=()=>{S.cur=new Date(y,m+1,1);render();}; $("#mpick").onclick=e=>{ e.stopPropagation(); if($("#pop")&&popState?.key==="mpick") return dismissWho(); monthPicker($("#mpick")); }; if($("#mt")) $("#mt").onclick=()=>{S.cur=new Date();render();};
-}
-const monthTitle=(y,m)=>`<div class="titlenav"><button class="arrow" id="mp" aria-label="이전 달">‹</button><h2><button class="titlebtn" id="mpick" aria-haspopup="dialog" title="달 선택">${y}년 ${m+1}월<span class="caret">▾</span></button></h2><button class="arrow" id="mn" aria-label="다음 달">›</button>${ym(S.cur)===ym(new Date())?"":`<button class="btn btn-xs" id="mt">이번 달</button>`}</div>${mSeg()}`;
-const EXP_URL="https://claude.ai/artifact/36ivSyBvSVugn9SuFR4gEq";
-const EXP_STATUSES=["예정","확인중","결재상신","결재승인","종결"];
-const EXP_ST_COLOR={"예정":"#858c97","확인중":"#8b5a2b","결재상신":"#2563eb","결재승인":"#1d8a4c","종결":"#d23b3b"};
-/* 지연·임박 판정 — 지출결의 관리장의 dueOf()와 같은 기준.
-   지결·예결(서류 필요): 서류 완료면 없음, 서류마감일(docDate) 지나면 지연 / soonDays일 이내면 임박
-   그 밖: 결재승인 이후면 없음(요청은 예정일 때만), 시작일 지나면 지연. 지급일 soonDays일 이내면 임박 */
-function expDue(it,today,soonDays){
-  if(!it || it.status==="종결") return null;
-  const diff=d=>Math.round((pd(d)-pd(today))/864e5);
-  if(["지결","예결"].includes(it.cat) && it.doc!=="제출X"){
-    if(it.doc==="완료") return null;
-    if(it.docDate){ const d=diff(it.docDate);
-      if(d<0) return {k:"late",label:`서류마감 ${-d}일 지남`};
-      if(d<=soonDays) return {k:"soon",label:d===0?"오늘 서류마감":`서류마감 D-${d}`}; }
-  } else {
-    if(EXP_STATUSES.indexOf(it.status)>=EXP_STATUSES.indexOf("결재승인")) return null;
-    if(it.cat==="요청" && it.status!=="예정") return null;
-    if(it.start){ const d=diff(it.start); if(d<0) return {k:"late",label:`${-d}일 지남`}; }
-  }
-  if(it.pay){ const d=diff(it.pay); if(d>=0 && d<=soonDays) return {k:"soon",label:d===0?"오늘 지급":`지급 D-${d}`}; }
-  return null;
-}
-function rMonthExp(){
-  const y=S.cur.getFullYear(), m=S.cur.getMonth(), key=ym(S.cur), today=todayStr();
-  const E=S.exp||{}, cats=E.cats||[];
-  const catColor=c=>(cats.find(x=>x.code===c)||{}).color||"#8a93a0";
-  const items=(E.items||[]).filter(it=>it.start && String(it.part||"1")==="1");   // 1파트 일정만
-  const byDay={}; items.forEach(it=>(byDay[it.start] ||= []).push(it));
-  const mi=items.filter(it=>it.start.startsWith(key));
-  const first=new Date(y,m,1), start=addDays(first,-first.getDay());
-  const soonDays=Number.isFinite(+E.soonDays)?+E.soonDays:3;
-  const chip=(it,k)=>{ const du=expDue(it,today,soonDays);
-    return `<a class="ev xev${k>=3?" xtra":""}${du?" due-"+du.k:""}" href="${EXP_URL}#edit-${encodeURIComponent(it.id)}" target="_blank" rel="noopener" style="--sc:${EXP_ST_COLOR[it.status]||"#858c97"}" title="${esc(it.name)} · ${esc(it.cat||"")} · ${esc(it.status||"")}${it.owner?" · "+esc(it.owner):""}${it.docDate?" · 서류마감 "+md(it.docDate):""}${it.pay?" · 지급 "+md(it.pay):""}${du?" · "+du.label:""}&#10;누르면 지출결의 관리장에서 수정 창이 열려요"><span class="dot" style="background:${catColor(it.cat)}"></span><b class="xc" style="color:${catColor(it.cat)}">${esc(it.cat||"")}</b><span class="t">${esc(it.name)}</span></a>`; };
-  let cells="";
-  for(let i=0;i<42;i++){
-    const d=addDays(start,i), ds=ymd(d);
-    if(i===35 && d.getMonth()!==m) break;
-    const ts=(byDay[ds]||[]).slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"","ko"));
-    const hol=holName(ds);
-    const cls=["day","xday",d.getMonth()!==m?"out":"",d.getDay()===0?"sun":"",d.getDay()===6?"sat":"",hol?"off":"",ds===today?"today":""].join(" ");
-    const many=ts.length>3;
-    cells+=`<div class="${cls}${many?" many":""}" data-day="${ds}" tabindex="${many?0:-1}" aria-label="${d.getMonth()+1}월 ${d.getDate()}일 지출결의 ${ts.length}건"><div class="dwrap"><span class="num">${d.getDate()}${hol?`<span class="hol">${esc(hol)}</span>`:""}</span>${ts.map(chip).join("")}${many?`<span class="more">+${ts.length-3}개 더</span>`:""}</div></div>`;
-  }
-  const synced=E.syncedAt?new Date(E.syncedAt):null;
-  const syncTxt=synced?`${synced.getMonth()+1}/${synced.getDate()} ${String(synced.getHours()).padStart(2,"0")}:${String(synced.getMinutes()).padStart(2,"0")} 기준`:"";
-  const empty=!S.exp?`<div class="xempty">${PREVIEW?"지출결의 관리장 일정을 아직 가져오지 않았어요.":"지출결의 연동은 지금은 claude.ai 미리보기에서만 볼 수 있어요."}</div>`:"";
-  $("#view").innerHTML=`<section class="sheet">
-   <div class="sheet-head">${monthTitle(y,m)}<div class="nav" style="visibility:hidden" aria-hidden="true"><button class="btn" tabindex="-1">반복 일정</button><button class="btn" tabindex="-1">공휴일 관리</button></div></div>
-   ${empty}
-   <div class="mstats"><span><b>${mi.length}</b>전체</span>${EXP_STATUSES.map(s=>`<span><b style="color:${EXP_ST_COLOR[s]}">${mi.filter(it=>it.status===s).length}</b>${s}</span>`).join("")}</div>
-   <div class="cal-scroll"><div class="cal">${DOW.map(d=>`<div class="dow">${d}</div>`).join("")}${cells}</div></div>
-   <div class="legend" style="margin-top:12px;align-items:center">${cats.map(c=>`<span><i class="dot" style="background:${esc(c.color)}"></i>${esc(c.code)}</span>`).join("")}<span>·</span>${EXP_STATUSES.map(s=>`<span><i class="xsw" style="--sc:${EXP_ST_COLOR[s]}"></i>${s}</span>`).join("")}<span>· <i class="xdue late"></i>지연 지결·예결 서류마감 지남 / 그 밖 시작일 지남·결재승인 전</span><span><i class="xdue soon"></i>임박 서류마감·지급일 ${soonDays}일 이내</span><span>· 일정을 누르면 지출결의 관리장 달력에서 수정 창이 열려요</span>${syncTxt?`<span>· 지출결의 관리장 ${syncTxt}</span>`:""}</div>
-  </section>`;
-  bindMonthHead(y,m);
-}
 function rMonth(){
-  if(MTAB==="exp") return rMonthExp();
   const y=S.cur.getFullYear(), m=S.cur.getMonth(), key=ym(S.cur);
   const first=new Date(y,m,1), start=addDays(first,-first.getDay());
   const mt=all().filter(t=>t.start && (t.start.startsWith(key) || (t.end && t.start<key+"-32" && t.end>=key+"-01")));
@@ -1147,13 +1065,13 @@ function rMonth(){
     cells+=`<div class="${cls}${many?" many":""}" data-day="${ds}" role="button" tabindex="0" aria-label="${d.getMonth()+1}월 ${d.getDate()}일"><div class="dwrap"><span class="num">${d.getDate()}${hol?`<span class="hol">${esc(hol)}</span>`:""}${lv?lvTag(lv):""}${badge}</span>${ts.map((t,k)=>k<3?evRow(t):evRow(t).replace('class="ev ','class="ev xtra ')).join("")}${many?`<span class="more">+${ts.length-3}개 더</span>`:""}</div></div>`;
   }
   $("#view").innerHTML=`<section class="sheet">
-   <div class="sheet-head">${monthTitle(y,m)}
-    <div class="nav"><button class="btn" id="rulemgr">반복 일정</button><button class="btn" id="holmgr">공휴일 관리</button></div></div>
+   <div class="sheet-head"><div class="titlenav"><button class="arrow" id="mp" aria-label="이전 달">‹</button><h2><button class="titlebtn" id="mpick" aria-haspopup="dialog" title="달 선택">${y}년 ${m+1}월<span class="caret">▾</span></button></h2><button class="arrow" id="mn" aria-label="다음 달">›</button>${ym(S.cur)===ym(new Date())?"":`<button class="btn btn-xs" id="mt">이번 달</button>`}</div>
+    <div class="nav"><button class="btn" id="rulemgr">반복 일정</button><button class="btn" id="holmgr">공휴일 관리</button><a class="btn" href="https://claude.ai/artifact/36ivSyBvSVugn9SuFR4gEq#calendar" target="_blank" rel="noopener" title="지출결의 관리장 달력을 새 탭에서 열어요">지출결의 관리장 ↗</a></div></div>
    <div class="mstats"><span><b>${work.length}</b>업무</span><span><b>${cnt("완료")}</b>완료</span><span><b>${cnt("진행중")+cnt("예정")}</b>예정·진행</span><span><b>${cnt("취소")}</b>취소</span><span><b>${work.filter(t=>kindOf(t)==="지시").length}</b>지시</span><span><b>${work.filter(t=>t.cat==="회의").length}</b>회의</span></div>
    <div class="cal-scroll"><div class="cal">${DOW.map(d=>`<div class="dow">${d}</div>`).join("")}${cells}</div></div>
    <div class="legend" style="margin-top:12px;align-items:center"><button class="btn btn-xs" id="catmgr">업무분류 편집</button>${CATS.map(c=>`<span><i class="dot" style="background:${CAT_COLOR[c]}"></i>${c}</span>`).join("")}<span>· ${STATUSES.map(s=>ST_ICON[s]+" "+s).join("  ")}</span><span>· ☑ 3/5 = 주간 다이어리 할 일 완료/전체 (누르면 그 주로 이동)</span><span>· 날짜를 누르면 그날 업무를 보고 추가할 수 있어요</span></div>
   </section>`;
-  bindMonthHead(y,m);
+  $("#mp").onclick=()=>{S.cur=new Date(y,m-1,1);render();}; $("#mn").onclick=()=>{S.cur=new Date(y,m+1,1);render();}; $("#mpick").onclick=e=>{ e.stopPropagation(); if($("#pop")&&popState?.key==="mpick") return dismissWho(); monthPicker($("#mpick")); }; if($("#mt")) $("#mt").onclick=()=>{S.cur=new Date();render();};
   // drag & drop schedules between days
   let drag=null; const dayEls=[...$("#view").querySelectorAll(".day")];
   $("#view").querySelectorAll(".ev[data-tid]").forEach(ev=>{
@@ -2181,8 +2099,6 @@ async function boot(){
   db.collection("settings").doc("holidays").onSnapshot(s=>{ S.holidays=s.exists?{...(s.data().days||{})}:{}; softRender(); },()=>{});
   db.collection("weeks").onSnapshot(snap=>{ snap.docs.forEach(d=>{ if(d.id!==weekKey()||(!editingInView()&&!$("#pop"))) S.weeks[d.id]=JSON.parse(JSON.stringify(d.data())); }); softRender(); },()=>{});
   db.collection("feedback").doc("all").onSnapshot(s=>{ if(s.exists && !(S.tab==="feedback"&&editingInView())) S.feedback=JSON.parse(JSON.stringify(s.data())); if(!S.feedback.months) S.feedback.months={}; softRender(); },()=>{});
-  // 지출결의 관리장 일정 사본 (ext/expense) — 월간 달력의 '지출결의' 탭에서 씀
-  db.collection("ext").doc("expense").onSnapshot(s=>{ S.exp=s.exists?JSON.parse(JSON.stringify(s.data())):null; if(S.tab==="month"&&MTAB==="exp") softRender(); },()=>{});
 }
 gateUrlUI(false);
 { const saved=ss.get("wd-code")||ls.get("wd-code");
