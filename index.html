@@ -1744,12 +1744,18 @@ function rProgress(){
 /* 6. feedback */
 const FB_SECTIONS=[["kpi","KPI","활성처·활성환자 증감, 나의 기여, Gap"],["core","핵심역량","고객사용지원 · 오류예방 · 개선 · 행정 지원"],["growth","성장, 육성","새로 해낸 일, 자동화, 동반성장"],["improve","개선점","다음에 풀어야 할 과제"]];
 const FB_FIELDS=[...FB_SECTIONS,["boss","받은 피드백","리더·동료에게 받은 피드백"]];
-/* 기본 양식(10월 피드백의 넘버링·제목만). '설정 저장'으로 바꾸면 settings/fbTemplate 에 저장 */
+/* 기본 양식(10월 피드백의 넘버링·제목만). 당월에서 '설정 저장' → 익월부터 그 양식 (settings/fbTemplate) */
 const FB_TPL_DEFAULT={
   kpi:"1) 26년 월별 정량평가기준 활성처 (4↑) *목표: 8,267처 / 16만명\n- \n\n2) 나의 기여 부분\n- \n\n3) 현 수준과의 Gap\n- ",
   core:"1) 고객사용지원\n\n- \n\n2) 오류예방, 대응\n\n- \n\n3) 개선\n\n- \n\n4) 행정 지원\n\n- "
 };
-const fbTpl=f=>(typeof S.fbTpl[f]==="string"?S.fbTpl[f]:FB_TPL_DEFAULT[f])||"";
+/* settings/fbTemplate = {kpi:[{from:"YYYY-MM", v}], core:[...]} — from 월부터 그 양식. (예전 문자열 형식도 읽음) */
+const fbTplList=f=>{ const x=S.fbTpl[f]; return typeof x==="string"?[{from:"0000-00",v:x}]:Array.isArray(x)?x:[]; };
+const fbTpl=(f,k)=>{ const hit=fbTplList(f).filter(e=>e.from<=k).sort((a,b)=>a.from.localeCompare(b.from)).pop(); return hit?hit.v:(FB_TPL_DEFAULT[f]||""); };
+const nextYm=k=>{ const [y,m]=k.split("-").map(Number); return ym(new Date(y,m,1)); };
+/* 비어 있거나 양식 그대로(기본/저장한 어떤 양식이든)면 '아직 안 쓴 칸' → 그 달의 양식을 보여 줌 */
+const fbNorm=s=>(s||"").replace(/[ \t]+$/gm,"").trim();
+const fbIsTpl=(f,v)=>{ const n=fbNorm(v); return !n || n===fbNorm(FB_TPL_DEFAULT[f]) || fbTplList(f).some(e=>n===fbNorm(e.v)); };
 function fbReport(k){
   const [y,m]=k.split("-"), fb=S.feedback.months[k]||{};
   const lines=[`[${y}년 ${Number(m)}월 월별 피드백]`];
@@ -1767,8 +1773,9 @@ function rFeedback(){
   const ts=all().filter(t=>t.start&&t.start.startsWith(k)&&!isOff(t));
   const prevK=ms[ms.indexOf(k)-1], prev=prevK&&S.feedback.months[prevK];
   /* 1회 정리: 예전에 전월 KPI를 자동으로 복사해 둔 뒤 손대지 않은 달은 비워서 기본 양식이 보이게 */
-  if(S.fbLoaded && !S.feedback.tplV1){ Object.entries(S.feedback.months).forEach(([m,f])=>{ const p=f.kpiFrom&&S.feedback.months[f.kpiFrom]; if(p&&f.kpi===p.kpi){ f.kpi=""; delete f.kpiFrom; } }); S.feedback.tplV1=1; saveFbSoon(); }
-  const useTpl=f=>k>="2026-11" && (f==="kpi"||f==="core") && !(fb[f]||"").trim();
+  /* kpiFrom 이 남아 있으면 자동 복사 후 한 번도 입력하지 않은 것(입력하면 kpiFrom 이 지워짐) */
+  if(S.fbLoaded && !S.feedback.tplV2){ Object.values(S.feedback.months).forEach(f=>{ if(f.kpiFrom){ f.kpi=""; delete f.kpiFrom; } }); S.feedback.tplV2=1; saveFbSoon(); }
+  const useTpl=f=>(f==="kpi"||f==="core") && !fbNorm(fb[f]);
   const hl=ts.filter(t=>t.hist), cancel=ts.filter(t=>t.status==="취소");
   $("#view").innerHTML=`<section class="sheet">
    <div class="sheet-head"><h2>월별 피드백</h2><button class="btn btn-main" id="cp1">${mLabel(k)} 보고서 복사</button><button class="btn" id="cpall">전체 월 복사</button><button class="btn" id="fb-draft">업무DB로 초안 만들기</button></div>
@@ -1784,7 +1791,7 @@ function rFeedback(){
     </div>
     <div>
      ${fb.draft?`<div class="draft"><span>업무DB를 보고 채운 <b>초안</b>이에요. 실제 제출한 내용으로 바꾼 뒤 표시를 지워 주세요.</span><button class="btn" id="undraft">초안 표시 지우기</button></div>`:""}
-     ${FB_SECTIONS.map(([f,l,h])=>`<div class="fb-sec"><label class="fb-h" for="fb-${f}">${l}<small>${h}</small>${f==="kpi"||f==="core"?`<span class="fb-acts">${f==="kpi"&&k>="2026-11"&&prev&&(prev.kpi||"").trim()?`<button type="button" class="btn btn-xs kpi-copy" id="kpi-copy">전월 KPI 다시 불러오기</button>`:""}<button type="button" class="btn btn-xs tpl-save" data-tpl="${f}" title="지금 칸의 내용을 ${l} 기본 양식으로 저장해요. 아직 안 쓴 달에 이 양식이 들어가요.">설정 저장</button></span>`:""}</label>${f==="kpi"&&fb.kpiFrom?`<div class="kpi-note">${mLabel(fb.kpiFrom)} KPI 양식을 그대로 가져왔어요. 숫자만 이번 달 기준으로 고쳐 주세요.</div>`:""}<textarea class="fb-ta" id="fb-${f}" data-f="${f}" placeholder="${h}">${esc(useTpl(f)?fbTpl(f):(fb[f]||""))}</textarea></div>`).join("")}
+     ${FB_SECTIONS.map(([f,l,h])=>`<div class="fb-sec"><label class="fb-h" for="fb-${f}">${l}<small>${h}</small>${f==="kpi"||f==="core"?`<span class="fb-acts">${f==="kpi"&&k>="2026-11"&&prev&&(prev.kpi||"").trim()?`<button type="button" class="btn btn-xs kpi-copy" id="kpi-copy">전월 KPI 다시 불러오기</button>`:""}<button type="button" class="btn btn-xs tpl-save" data-tpl="${f}" title="지금 칸의 내용을 ${l} 기본 설정으로 저장해요. ${mLabel(nextYm(k))}부터 이 양식으로 시작해요.">설정 저장</button></span>`:""}</label>${f==="kpi"&&fb.kpiFrom?`<div class="kpi-note">${mLabel(fb.kpiFrom)} KPI 양식을 그대로 가져왔어요. 숫자만 이번 달 기준으로 고쳐 주세요.</div>`:""}<textarea class="fb-ta" id="fb-${f}" data-f="${f}" placeholder="${h}">${esc(useTpl(f)?fbTpl(f,k):(fb[f]||""))}</textarea></div>`).join("")}
      <hr class="fb-hr">
      <div class="fb-sec boss"><label class="fb-h" for="fb-boss">받은 피드백<small>리더·동료에게 받은 피드백</small></label><textarea class="fb-ta" id="fb-boss" data-f="boss" placeholder="받은 피드백을 붙여넣으세요">${esc(fb.boss||"")}</textarea></div>
      <p class="muted small" style="margin:8px 0 0">입력하면 자동으로 저장돼요.</p>
@@ -1802,8 +1809,15 @@ function rFeedback(){
   $("#view").querySelectorAll("[data-f]").forEach(t=>{ const fit=()=>{ t.style.height="auto"; t.style.height=Math.max(t.dataset.f==="boss"?120:90,t.scrollHeight+2)+"px"; }; fit(); t.oninput=()=>{ fb[t.dataset.f]=t.value; if(t.dataset.f==="kpi") delete fb.kpiFrom; fit(); saveFbSoon(); }; });
   $("#view").querySelectorAll("[data-tpl]").forEach(b=>b.onclick=e=>{ e.preventDefault(); const f=b.dataset.tpl, v=$("#fb-"+f).value.replace(/\n+$/,"");
     if(!v.trim()){ toast("빈 양식은 저장할 수 없어요."); return; }
-    S.fbTpl={...S.fbTpl,[f]:v}; persist("settings","fbTemplate",S.fbTpl);
-    toast(`${f==="kpi"?"KPI":"핵심역량"} 기본 양식을 저장했어요. 아직 안 쓴 달에 이 양식이 들어가요.`); });
+    /* 당월(k)은 지금 내용 그대로 두고, 익월부터 새 양식. 익월 이후 양식 그대로인 달은 비워서 새 양식을 따라가게 */
+    const from=nextYm(k);
+    if((fb[f]||"")!==$("#fb-"+f).value){ fb[f]=$("#fb-"+f).value; if(f==="kpi") delete fb.kpiFrom; }
+    let changed=false;
+    Object.entries(S.feedback.months).forEach(([m,x])=>{ if(m>=from && fbNorm(x[f]) && fbIsTpl(f,x[f])){ x[f]=""; if(f==="kpi") delete x.kpiFrom; changed=true; } });
+    S.fbTpl={...S.fbTpl,[f]:[...fbTplList(f).filter(e=>e.from<from),{from,v}]}; persist("settings","fbTemplate",S.fbTpl);
+    clearTimeout(fTimer); persist("feedback","all",S.feedback);
+    render();
+    toast(`${f==="kpi"?"KPI":"핵심역량"} 기본 설정을 저장했어요. ${mLabel(from)}부터 이 양식으로 시작해요.`); });
   const u=$("#undraft"); if(u) u.onclick=()=>{ delete fb.draft; persist("feedback","all",S.feedback); render(); };
 }
 
