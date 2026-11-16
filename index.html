@@ -327,6 +327,22 @@ select.inp,input.inp,textarea.inp{border:1px solid var(--line);background:var(--
 .trow .mid{display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 6px;min-width:0;padding-top:4px}
 .trow .txt{flex:1 1 160px;min-width:0;display:block;resize:none;overflow:hidden;border:0;background:transparent;font-family:var(--f-hand);font-size:14px;line-height:1.5;padding:0;margin:0;color:var(--ink)}
 .trow .txt:focus{outline:none}
+/* 형광펜: 할 일 한 줄 전체에 색 */
+.trow.hl .txt,.dp-todo.hl .dp-t{background:color-mix(in srgb,var(--hl) 72%,transparent);border-radius:4px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.trow.hl .txt{padding:0 5px;margin-left:-5px}
+.dp-todo.hl .dp-t{padding:0 4px;flex:0 1 auto}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .trow.hl .txt,:root:not([data-theme="light"]) .dp-todo.hl .dp-t{background:color-mix(in srgb,var(--hl) 38%,transparent)}}
+:root[data-theme="dark"] .trow.hl .txt,:root[data-theme="dark"] .dp-todo.hl .dp-t{background:color-mix(in srgb,var(--hl) 38%,transparent)}
+.hl-bar{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:4px 8px 6px}
+.hl-title{width:100%;display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--ink-3);padding:2px 0}
+.hl-sw{position:relative;width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(0,0,0,.12);padding:0;background:var(--c)}
+.hl-sw:hover{transform:scale(1.1)}
+.hl-sw.on{box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--ink)}
+.hl-sw.none{background:var(--paper);color:var(--ink-3);font-size:12px;line-height:1}
+.hl-sw.add{background:var(--paper);border-style:dashed;color:var(--ink-3);font-size:14px;line-height:1;overflow:hidden}
+.hl-sw.add input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border:0;padding:0}
+.hl-edit .hl-sw.hl-c::after{content:"×";position:absolute;top:-6px;right:-6px;width:14px;height:14px;border-radius:50%;background:var(--red);color:#fff;font-size:11px;line-height:13px;text-align:center}
+.hl-edit-btn{border:0;background:transparent;color:var(--ink-3);font-size:11px;padding:0 2px;text-decoration:underline;text-underline-offset:2px}
 .trow .meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-left:auto}
 .trow .meta input{border:0;background:transparent;font-size:12.5px;color:var(--navy);width:90px}
 .trow .side{justify-content:flex-end;padding-top:2px}
@@ -631,7 +647,7 @@ const DOW = ["일","월","화","수","목","금","토"];
 const TABS = [["month","월간 달력"],["week","주간 다이어리"],["db","업무DB"],["stats","분류별 통계"],["progress","진행현황"],["feedback","월별 피드백"],["leave","연차 관리"]];
 
 const LEAVE_TYPES = {"연차":1,"오전반차":0.5,"오후반차":0.5,"반반차":0.25,"전사휴가":0,"병가":0,"경조사":0,"기타":0};
-const S = {tab:"month", tasks:{}, rules:[], people:[], memos:[], ui:{}, fbTpl:{}, symbols:["★"], weeks:{}, feedback:{months:{}}, settingsHash:null, holidays:{}, leave:{grants:[],uses:{}}, leaveYear:String(new Date().getFullYear()),
+const S = {tab:"month", tasks:{}, rules:[], people:[], memos:[], ui:{}, fbTpl:{}, hls:["#fff176","#c5e88a","#a8d8f5","#f8bbd0","#d7c4f0"], symbols:["★"], weeks:{}, feedback:{months:{}}, settingsHash:null, holidays:{}, leave:{grants:[],uses:{}}, leaveYear:String(new Date().getFullYear()),
   cur:new Date(), weekStart:mondayOf(new Date()), fbMonth:null, statPeriod:"all", statNoOff:true, progPeriod:"all",
   f:{q:"",m:"",c:"",s:""}};
 let db = null, dirty = false, settingsLoaded = false;
@@ -1172,7 +1188,7 @@ function rWeek(){
      <div class="wl dh"><div class="dayhead"><span class="d ${weekend||holName(ds)?"sun":""}" ${ds===todayStr()?'aria-current="date"':""}>${dlabel}</span>${holName(ds)?`<span class="hol">${esc(holName(ds))}</span>`:""}${leaveOn(ds)?lvTag(leaveOn(ds)):""}<input class="daymemo" data-memo="${i}" value="${esc(d.memo)}" placeholder="* 일정 메모" aria-label="${dlabel} 메모"></div>
      ${refs.length?`<div class="dbref">${refs.map(t=>`<span class="chip" title="업무DB"><i class="dot" style="background:${CAT_COLOR[t.cat]||CAT_COLOR[""]}"></i>${esc(t.name)}</span>`).join("")}</div>`:""}</div>
      ${d.items.map((it,j)=>{
-       return `<div class="wl trow ${it.s} ${it.lv?"sub":""}" data-di="${i}" data-j="${j}"><span class="grip" title="끌어서 순서 바꾸기" aria-hidden="true">⠿</span>
+       return `<div class="wl trow ${it.s} ${it.lv?"sub":""} ${it.hl?"hl":""}" ${it.hl?`style="--hl:${esc(it.hl)}"`:""} data-di="${i}" data-j="${j}"><span class="grip" title="끌어서 순서 바꾸기" aria-hidden="true">⠿</span>
         ${it.lv?`<button class="outbtn" data-act="out" title="내어쓰기 (상위 할 일로)" aria-label="내어쓰기">⇤</button>`:""}<button class="chk ${it.s}" data-act="chk" aria-label="완료 표시 (오른쪽 클릭: 이월·취소)" title="클릭: 완료 · 오른쪽 클릭(길게 누르기): 이월·취소">${CHK[it.s]}</button>
         <div class="mid"><textarea class="txt" data-act="txt" rows="1" aria-label="${it.lv?"하위 할 일":"할 일"}" title="Enter 새 줄 · Tab 들여쓰기 · Shift+Tab 내어쓰기">${esc(it.t)}</textarea>${it.n||it.from||(it.s==="moved"&&it.to)?`<div class="meta">${it.from?`<button class="mv-chip from" data-goto="${it.from}" title="${md(it.from)}에서 이월된 할 일 · 눌러서 그날로 이동">← ${md(it.from)}에서${it.mv>1?` · ${it.mv}번째`:""}</button>`:""}${it.s==="moved"&&it.to?`<button class="mv-chip to" data-goto="${it.to}" title="${md(it.to)}로 이월함 · 눌러서 그날로 이동">→ ${md(it.to)} 이월</button>`:""}${it.n?`<input data-act="note" value="${esc(it.n)}" aria-label="메모">`:""}</div>`:""}</div>
         <div class="whocol">${(it.who||[]).length?`<span class="whos" data-act="who" role="button" tabindex="0" title="유관자 바꾸기">${whoSorted(it.who).map(whoChip).join("")}</span>`:""}</div>
@@ -1483,12 +1499,31 @@ function statusMenu(btn,w,srcKey,di,j){
     }
     render(); toast(r&&(r.removed||r.restored)?`이월을 되돌렸어요. (새로 생긴 할 일 ${r.removed}개 삭제)`:"되돌릴 이월 기록을 찾지 못했어요.");
   };
+  /* 형광펜: 색 고르기 / 지우기 / 피커로 색 추가 / 편집 모드에서 색 삭제 */
+  const hlWrap=document.createElement("div"); pop.appendChild(Object.assign(document.createElement("div"),{className:"st-sep"})); pop.appendChild(hlWrap);
+  let hlEdit=false;
+  const drawHl=()=>{
+    hlWrap.className="hl-bar"+(hlEdit?" hl-edit":"");
+    hlWrap.innerHTML=`<div class="hl-title"><span>🖍 형광펜${hlEdit?" · 지울 색을 누르세요":""}</span><button class="hl-edit-btn" data-hledit>${hlEdit?"완료":"색 편집"}</button></div>`
+      +S.hls.map(c=>`<button class="hl-sw hl-c ${!hlEdit&&it.hl===c?"on":""}" style="--c:${esc(c)}" data-hl="${esc(c)}" title="${hlEdit?"이 색 삭제":"이 색으로 칠하기"}" aria-label="${hlEdit?"색 삭제":"형광펜"} ${esc(c)}"></button>`).join("")
+      +(hlEdit?"":`<button class="hl-sw none" data-hl="" title="형광펜 지우기" aria-label="형광펜 지우기">✕</button>`)
+      +`<label class="hl-sw add" title="색 추가" aria-label="색 추가">＋<input type="color" value="#ffe066" data-hladd></label>`;
+    hlWrap.querySelector("[data-hledit]").onclick=e=>{ e.stopPropagation(); hlEdit=!hlEdit; drawHl(); };
+    hlWrap.querySelectorAll("[data-hl]").forEach(b=>b.onclick=e=>{ e.stopPropagation(); const c=b.dataset.hl;
+      if(hlEdit){ S.hls=S.hls.filter(x=>x!==c); persist("settings","highlights",{list:S.hls}); drawHl(); return; }
+      closeWho(); if(c && it.hl!==c) it.hl=c; else delete it.hl; persist("weeks",srcKey,w); render(); });
+    const add=hlWrap.querySelector("[data-hladd]");
+    add.onclick=e=>e.stopPropagation();
+    add.onchange=()=>{ const c=add.value.toLowerCase(); if(!S.hls.includes(c)){ S.hls=[...S.hls,c]; persist("settings","highlights",{list:S.hls}); }
+      if(hlEdit){ drawHl(); return; } closeWho(); it.hl=c; persist("weeks",srcKey,w); render(); };
+  };
+  drawHl();
   pop.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>{
     const s=b.dataset.st; closeWho();
     if(s==="moved") return movePicker(btn,w,srcKey,di,j);
     if(it.s==="moved") delete it.to;
     it.s=s; persist("weeks",srcKey,w); render(); });
-  placePop(pop,btn,150);
+  placePop(pop,btn,190);
 }
 /* 이월: pick the day to carry a to-do over to; a copy is made there and the original shows "→ date" */
 function blankWeek(){ return {top:"",days:Array.from({length:6},()=>({memo:"",items:[]})),note:""}; }
@@ -1504,8 +1539,8 @@ function carryOver(w,srcKey,di,j,ds,withKids){
   const tk=ymd(mondayOf(pd(ds))), tdi=(pd(ds).getDay()+6)%7;
   const tw=S.weeks[tk] ||= blankWeek();
   const from=ymd(addDays(pd(srcKey),di)), mv=(it.mv||0)+1;
-  const copy={t:it.t,s:"todo",n:it.n||"",from,mv,cp:mvid,...(it.who?{who:[...it.who]}:{}),...(it.lv?{lv:1}:{})};
-  tw.days[tdi].items.push(copy,...kids.map(k=>({t:k.t,s:"todo",n:k.n||"",lv:1,cp:mvid,...(k.who?{who:[...k.who]}:{})})));
+  const copy={t:it.t,s:"todo",n:it.n||"",from,mv,cp:mvid,...(it.who?{who:[...it.who]}:{}),...(it.lv?{lv:1}:{}),...(it.hl?{hl:it.hl}:{})};
+  tw.days[tdi].items.push(copy,...kids.map(k=>({t:k.t,s:"todo",n:k.n||"",lv:1,cp:mvid,...(k.who?{who:[...k.who]}:{}),...(k.hl?{hl:k.hl}:{})})));
   it.s="moved"; it.to=ds;
   persist("weeks",srcKey,w); if(tk!==srcKey) persist("weeks",tk,tw);
 }
@@ -1983,7 +2018,7 @@ function renderToday(){
    <div class="dp-lines">
     ${evs.length?evs.slice(0,6).map(t=>`<button class="dp-row ${t.status==="완료"?"is-done":""} ${t.status==="취소"?"is-cancel":""}" data-ttask="${t.id}"><span class="dp-time">${tm(t)}</span><span class="dp-t">${esc(cleanName(t))}</span></button>`).join(""):`<div class="dp-row dp-empty">오늘은 일정이 없어요</div>`}
     <div class="dp-cut" aria-hidden="true"></div>
-    ${live.length?live.map(it=>`<button class="dp-row dp-todo ${it.s}" data-ttodo="${items.indexOf(it)}" title="눌러서 완료 표시"><span class="dp-ck">${it.s==="done"?"☑":it.s==="moved"?"→":"☐"}</span><span class="dp-t">${esc(it.t)}</span></button>`).join(""):`<div class="dp-row dp-empty">주간 다이어리에 오늘 할 일이 없어요</div>`}
+    ${live.length?live.map(it=>`<button class="dp-row dp-todo ${it.s} ${it.hl?"hl":""}" ${it.hl?`style="--hl:${esc(it.hl)}"`:""} data-ttodo="${items.indexOf(it)}" title="눌러서 완료 표시"><span class="dp-ck">${it.s==="done"?"☑":it.s==="moved"?"→":"☐"}</span><span class="dp-t">${esc(it.t)}</span></button>`).join(""):`<div class="dp-row dp-empty">주간 다이어리에 오늘 할 일이 없어요</div>`}
    </div>
    ${soon.length?`<div class="dp-soon">${soon.map(t=>`<button class="dp-soon-row" data-ttask="${t.id}"><span class="dp-dd">D-${Math.round((pd(t.start)-pd(ds))/864e5)}</span><span class="dp-t">${esc(cleanName(t))}</span></button>`).join("")}</div>`:""}`}
    <button class="memo-fold" id="today-fold" title="${folded?"펼치기":"접기"}" aria-label="${folded?"오늘 펼치기":"오늘 접기"}" aria-expanded="${!folded}"></button>`;
@@ -2120,6 +2155,7 @@ async function boot(){
   },()=>{});
   db.collection("settings").doc("categories").onSnapshot(s=>{ if(s.exists&&Array.isArray(s.data().list)&&s.data().list.length) applyCats(s.data().list); softRender(); },()=>{});
   db.collection("settings").doc("memos").onSnapshot(s=>{ if(memoEditing()){ memoDirty=true; return; } S.memos=s.exists?JSON.parse(JSON.stringify(s.data().list||[])):[]; renderMemos(); },()=>{});
+  db.collection("settings").doc("highlights").onSnapshot(s=>{ if(s.exists&&Array.isArray(s.data().list)) S.hls=[...s.data().list]; },()=>{});
   db.collection("settings").doc("symbols").onSnapshot(s=>{ if(s.exists&&Array.isArray(s.data().list)) S.symbols=[...s.data().list]; softRender(); },()=>{});
   db.collection("settings").doc("people").onSnapshot(s=>{ S.people=s.exists?JSON.parse(JSON.stringify(s.data().list||[])):[]; if(!$("#pop")) softRender(); },()=>{});
   db.collection("settings").doc("recurring").onSnapshot(s=>{ S.rules=s.exists?JSON.parse(JSON.stringify(s.data().rules||[])):[]; ALL=null; softRender(); },()=>{});
