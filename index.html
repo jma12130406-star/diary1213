@@ -518,7 +518,8 @@ svg text{fill:var(--ink-2);font-size:11px;font-family:var(--f-ui)}
 .fb-h small{font-family:var(--f-ui);font-size:12px;font-weight:400;color:var(--ink-3);margin-left:4px}
 .fb-ta{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);padding:10px 12px;font-family:var(--f-ui);font-size:13.5px;line-height:1.65;color:var(--ink);resize:none;overflow:hidden;white-space:pre-wrap;tab-size:4}
 .fb-ta:focus{outline:2px solid var(--navy);outline-offset:1px;background:var(--paper)}
-.kpi-copy{margin-left:auto;font-family:var(--f-ui);font-weight:400}
+.kpi-copy,.tpl-save{font-family:var(--f-ui);font-weight:400}
+.fb-acts{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .kpi-note{font-size:12px;color:var(--ink-2);background:var(--today);border-radius:7px;padding:5px 9px}
 .fb-hr{border:0;border-top:2px solid var(--day-sep);margin:8px 0 18px}
 .fb-sec.boss .fb-ta{background:var(--paper)}
@@ -630,7 +631,7 @@ const DOW = ["일","월","화","수","목","금","토"];
 const TABS = [["month","월간 달력"],["week","주간 다이어리"],["db","업무DB"],["stats","분류별 통계"],["progress","진행현황"],["feedback","월별 피드백"],["leave","연차 관리"]];
 
 const LEAVE_TYPES = {"연차":1,"오전반차":0.5,"오후반차":0.5,"반반차":0.25,"전사휴가":0,"병가":0,"경조사":0,"기타":0};
-const S = {tab:"month", tasks:{}, rules:[], people:[], memos:[], ui:{}, symbols:["★"], weeks:{}, feedback:{months:{}}, settingsHash:null, holidays:{}, leave:{grants:[],uses:{}}, leaveYear:String(new Date().getFullYear()),
+const S = {tab:"month", tasks:{}, rules:[], people:[], memos:[], ui:{}, fbTpl:{}, symbols:["★"], weeks:{}, feedback:{months:{}}, settingsHash:null, holidays:{}, leave:{grants:[],uses:{}}, leaveYear:String(new Date().getFullYear()),
   cur:new Date(), weekStart:mondayOf(new Date()), fbMonth:null, statPeriod:"all", statNoOff:true, progPeriod:"all",
   f:{q:"",m:"",c:"",s:""}};
 let db = null, dirty = false, settingsLoaded = false;
@@ -1743,6 +1744,12 @@ function rProgress(){
 /* 6. feedback */
 const FB_SECTIONS=[["kpi","KPI","활성처·활성환자 증감, 나의 기여, Gap"],["core","핵심역량","고객사용지원 · 오류예방 · 개선 · 행정 지원"],["growth","성장, 육성","새로 해낸 일, 자동화, 동반성장"],["improve","개선점","다음에 풀어야 할 과제"]];
 const FB_FIELDS=[...FB_SECTIONS,["boss","받은 피드백","리더·동료에게 받은 피드백"]];
+/* 기본 양식(10월 피드백의 넘버링·제목만). '설정 저장'으로 바꾸면 settings/fbTemplate 에 저장 */
+const FB_TPL_DEFAULT={
+  kpi:"1) 26년 월별 정량평가기준 활성처 (4↑) *목표: 8,267처 / 16만명\n- \n\n2) 나의 기여 부분\n- \n\n3) 현 수준과의 Gap\n- ",
+  core:"1) 고객사용지원\n\n- \n\n2) 오류예방, 대응\n\n- \n\n3) 개선\n\n- \n\n4) 행정 지원\n\n- "
+};
+const fbTpl=f=>(typeof S.fbTpl[f]==="string"?S.fbTpl[f]:FB_TPL_DEFAULT[f])||"";
 function fbReport(k){
   const [y,m]=k.split("-"), fb=S.feedback.months[k]||{};
   const lines=[`[${y}년 ${Number(m)}월 월별 피드백]`];
@@ -1759,7 +1766,9 @@ function rFeedback(){
   const k=S.fbMonth, fb=(S.feedback.months[k] ||= {kpi:"",core:"",growth:"",improve:"",boss:""});
   const ts=all().filter(t=>t.start&&t.start.startsWith(k)&&!isOff(t));
   const prevK=ms[ms.indexOf(k)-1], prev=prevK&&S.feedback.months[prevK];
-  if(k>="2026-11" && !(fb.kpi||"").trim() && prev && (prev.kpi||"").trim()){ fb.kpi=prev.kpi; fb.kpiFrom=prevK; saveFbSoon(); }
+  /* 1회 정리: 예전에 전월 KPI를 자동으로 복사해 둔 뒤 손대지 않은 달은 비워서 기본 양식이 보이게 */
+  if(S.fbLoaded && !S.feedback.tplV1){ Object.entries(S.feedback.months).forEach(([m,f])=>{ const p=f.kpiFrom&&S.feedback.months[f.kpiFrom]; if(p&&f.kpi===p.kpi){ f.kpi=""; delete f.kpiFrom; } }); S.feedback.tplV1=1; saveFbSoon(); }
+  const useTpl=f=>k>="2026-11" && (f==="kpi"||f==="core") && !(fb[f]||"").trim();
   const hl=ts.filter(t=>t.hist), cancel=ts.filter(t=>t.status==="취소");
   $("#view").innerHTML=`<section class="sheet">
    <div class="sheet-head"><h2>월별 피드백</h2><button class="btn btn-main" id="cp1">${mLabel(k)} 보고서 복사</button><button class="btn" id="cpall">전체 월 복사</button><button class="btn" id="fb-draft">업무DB로 초안 만들기</button></div>
@@ -1775,7 +1784,7 @@ function rFeedback(){
     </div>
     <div>
      ${fb.draft?`<div class="draft"><span>업무DB를 보고 채운 <b>초안</b>이에요. 실제 제출한 내용으로 바꾼 뒤 표시를 지워 주세요.</span><button class="btn" id="undraft">초안 표시 지우기</button></div>`:""}
-     ${FB_SECTIONS.map(([f,l,h])=>`<div class="fb-sec"><label class="fb-h" for="fb-${f}">${l}<small>${h}</small>${f==="kpi"&&k>="2026-11"&&prev&&(prev.kpi||"").trim()?`<button type="button" class="btn btn-xs kpi-copy" id="kpi-copy">전월 KPI 다시 불러오기</button>`:""}</label>${f==="kpi"&&fb.kpiFrom?`<div class="kpi-note">${mLabel(fb.kpiFrom)} KPI 양식을 그대로 가져왔어요. 숫자만 이번 달 기준으로 고쳐 주세요.</div>`:""}<textarea class="fb-ta" id="fb-${f}" data-f="${f}" placeholder="${h}">${esc(fb[f]||"")}</textarea></div>`).join("")}
+     ${FB_SECTIONS.map(([f,l,h])=>`<div class="fb-sec"><label class="fb-h" for="fb-${f}">${l}<small>${h}</small>${f==="kpi"||f==="core"?`<span class="fb-acts">${f==="kpi"&&k>="2026-11"&&prev&&(prev.kpi||"").trim()?`<button type="button" class="btn btn-xs kpi-copy" id="kpi-copy">전월 KPI 다시 불러오기</button>`:""}<button type="button" class="btn btn-xs tpl-save" data-tpl="${f}" title="지금 칸의 내용을 ${l} 기본 양식으로 저장해요. 아직 안 쓴 달에 이 양식이 들어가요.">설정 저장</button></span>`:""}</label>${f==="kpi"&&fb.kpiFrom?`<div class="kpi-note">${mLabel(fb.kpiFrom)} KPI 양식을 그대로 가져왔어요. 숫자만 이번 달 기준으로 고쳐 주세요.</div>`:""}<textarea class="fb-ta" id="fb-${f}" data-f="${f}" placeholder="${h}">${esc(useTpl(f)?fbTpl(f):(fb[f]||""))}</textarea></div>`).join("")}
      <hr class="fb-hr">
      <div class="fb-sec boss"><label class="fb-h" for="fb-boss">받은 피드백<small>리더·동료에게 받은 피드백</small></label><textarea class="fb-ta" id="fb-boss" data-f="boss" placeholder="받은 피드백을 붙여넣으세요">${esc(fb.boss||"")}</textarea></div>
      <p class="muted small" style="margin:8px 0 0">입력하면 자동으로 저장돼요.</p>
@@ -1791,6 +1800,10 @@ function rFeedback(){
   const kc=$("#kpi-copy"); if(kc) kc.onclick=()=>{ if(kc.dataset.armed||!(fb.kpi||"").trim()||fb.kpi===prev.kpi){ fb.kpi=prev.kpi; fb.kpiFrom=prevK; saveFbSoon(); render(); } else { kc.dataset.armed=1; kc.textContent="지금 KPI 내용을 덮어써요 · 한 번 더"; } };
   $("#cpall").onclick=()=>copyText(ms.filter(m=>{ const f=S.feedback.months[m]; return f&&FB_FIELDS.some(([x])=>f[x]); }).map(fbReport).join("\n\n────────────\n\n"),"전체 월 보고서를");
   $("#view").querySelectorAll("[data-f]").forEach(t=>{ const fit=()=>{ t.style.height="auto"; t.style.height=Math.max(t.dataset.f==="boss"?120:90,t.scrollHeight+2)+"px"; }; fit(); t.oninput=()=>{ fb[t.dataset.f]=t.value; if(t.dataset.f==="kpi") delete fb.kpiFrom; fit(); saveFbSoon(); }; });
+  $("#view").querySelectorAll("[data-tpl]").forEach(b=>b.onclick=e=>{ e.preventDefault(); const f=b.dataset.tpl, v=$("#fb-"+f).value.replace(/\n+$/,"");
+    if(!v.trim()){ toast("빈 양식은 저장할 수 없어요."); return; }
+    S.fbTpl={...S.fbTpl,[f]:v}; persist("settings","fbTemplate",S.fbTpl);
+    toast(`${f==="kpi"?"KPI":"핵심역량"} 기본 양식을 저장했어요. 아직 안 쓴 달에 이 양식이 들어가요.`); });
   const u=$("#undraft"); if(u) u.onclick=()=>{ delete fb.draft; persist("feedback","all",S.feedback); render(); };
 }
 
@@ -2097,10 +2110,11 @@ async function boot(){
   db.collection("settings").doc("people").onSnapshot(s=>{ S.people=s.exists?JSON.parse(JSON.stringify(s.data().list||[])):[]; if(!$("#pop")) softRender(); },()=>{});
   db.collection("settings").doc("recurring").onSnapshot(s=>{ S.rules=s.exists?JSON.parse(JSON.stringify(s.data().rules||[])):[]; ALL=null; softRender(); },()=>{});
   db.collection("settings").doc("leave").onSnapshot(s=>{ if(s.exists&&!(S.tab==="leave"&&editingInView())){ const v=JSON.parse(JSON.stringify(s.data())); S.leave={grants:v.grants||[],uses:v.uses||{}}; } if(!s.metadata.fromCache) ensureMonthlyLeave(); softRender(); },()=>{});
+  db.collection("settings").doc("fbTemplate").onSnapshot(s=>{ S.fbTpl=s.exists?{...s.data()}:{}; softRender(); },()=>{});
   db.collection("settings").doc("ui").onSnapshot(s=>{ S.ui=s.exists?{...s.data()}:{}; renderToday(); },()=>{});
   db.collection("settings").doc("holidays").onSnapshot(s=>{ S.holidays=s.exists?{...(s.data().days||{})}:{}; softRender(); },()=>{});
   db.collection("weeks").onSnapshot(snap=>{ snap.docs.forEach(d=>{ if(d.id!==weekKey()||(!editingInView()&&!$("#pop"))) S.weeks[d.id]=JSON.parse(JSON.stringify(d.data())); }); softRender(); },()=>{});
-  db.collection("feedback").doc("all").onSnapshot(s=>{ if(s.exists && !(S.tab==="feedback"&&editingInView())) S.feedback=JSON.parse(JSON.stringify(s.data())); if(!S.feedback.months) S.feedback.months={}; softRender(); },()=>{});
+  db.collection("feedback").doc("all").onSnapshot(s=>{ if(s.exists && !(S.tab==="feedback"&&editingInView())) S.feedback=JSON.parse(JSON.stringify(s.data())); if(!S.feedback.months) S.feedback.months={}; if(!s.metadata?.fromCache) S.fbLoaded=true; softRender(); },()=>{});
 }
 gateUrlUI(false);
 { const saved=ss.get("wd-code")||ls.get("wd-code");
