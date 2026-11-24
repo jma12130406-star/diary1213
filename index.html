@@ -625,6 +625,28 @@ svg text{fill:var(--ink-2);font-size:11px;font-family:var(--f-ui)}
 .fb-field textarea{min-height:92px;resize:vertical;line-height:1.6}
 .draft{background:var(--today);border-radius:10px;padding:8px 12px;font-size:12.5px;display:flex;align-items:center;gap:10px;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap}
 .hl-list{margin:0;padding-left:18px;line-height:1.7;font-size:13px}
+.fb-mark.still{animation:none}
+.fb-cov{font-family:var(--f-ui);font-size:11.5px;font-weight:600;color:var(--green);background:color-mix(in srgb,var(--green) 12%,var(--paper));border-radius:99px;padding:1px 8px;margin-left:6px;vertical-align:2px}
+.fb-cov.bad{color:#fff;background:var(--red)}
+.fb-miss{display:inline-block;font-size:11px;font-weight:700;color:var(--red);white-space:nowrap}
+.hl-list li.miss{background:color-mix(in srgb,var(--red) 7%,transparent);border-radius:6px;padding:0 4px;margin-left:-4px}
+.hl-list li .btn-xs{font-size:11px;padding:0 6px;vertical-align:1px}
+.fb-where.man{color:var(--ink-2);background:var(--paper-2)}
+.fb-unok{font-size:11px}
+.fb-go{cursor:pointer;border-radius:6px;padding:0 4px;margin-left:-4px}
+.fb-go:hover{background:var(--paper-2)}
+.fb-go.on{background:var(--today);font-weight:600}
+.fb-wrap{position:relative;border-radius:10px;background:var(--paper-2)}
+.fb-wrap .fb-ta{position:relative;z-index:1}
+.fb-wrap.marking .fb-ta,.fb-wrap.marking .fb-ta:focus{background:transparent}
+.fb-mirror{position:absolute;inset:0;border:1px solid transparent;padding:10px 12px;font-family:var(--f-ui);font-size:13.5px;line-height:1.65;white-space:pre-wrap;overflow-wrap:break-word;tab-size:4;color:transparent;pointer-events:none;z-index:0}
+.fb-wrap{--fbm:#ffe066}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fb-wrap{--fbm:#7a6a12}}
+:root[data-theme="dark"] .fb-wrap{--fbm:#7a6a12}
+.fb-mark{color:transparent;background:var(--fbm);border-radius:4px;box-shadow:0 0 0 2px var(--fbm);animation:fbBlink .45s ease-in-out 6 alternate}
+@keyframes fbBlink{from{background:var(--fbm);box-shadow:0 0 0 2px var(--fbm)}to{background:transparent;box-shadow:0 0 0 2px transparent}}
+.fb-badge{position:absolute;right:8px;z-index:2;font-size:11px;font-weight:700;color:#fff;background:var(--green);border-radius:99px;padding:1px 8px;line-height:1.6;pointer-events:none}
+.fb-where{display:inline-block;font-size:11px;color:var(--green);background:color-mix(in srgb,var(--green) 10%,var(--paper));border-radius:99px;padding:0 7px;line-height:1.6;white-space:nowrap}
 .carry{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
 .carry pre{white-space:pre-wrap;font-family:var(--f-ui);font-size:13px;margin:0;line-height:1.6;color:var(--ink-2)}
 
@@ -2163,6 +2185,79 @@ async function copyText(txt,label){
   try{ await navigator.clipboard.writeText(txt); toast(label+" 복사했어요. 원하는 곳에 붙여넣으세요."); }
   catch{ openDlg(`<h3>${label}</h3><p class="muted small">자동 복사가 막혀 있어요. 아래 글이 선택된 상태에서 Ctrl+C 로 복사하세요.</p><textarea class="inp" id="cpy" style="width:100%;min-height:50vh">${esc(txt)}</textarea><div class="dlg-foot"><button class="btn" data-close>닫기</button></div>`); const t=$("#cpy"); t.focus(); t.select(); }
 }
+/* ★핵심업무(히스토리) → 핵심역량 칸의 알맞은 섹션(1) 2) … 제목) 아래 "- 업무명" 으로 자동 추가.
+   한 번 넣은 업무는 fb.coreAdded 에 기록 → 지워도 다시 안 들어감. 섹션 제목은 칸 안의 "N) 제목" 줄을 읽어서 씀 */
+/* 고객사용지원·행정 지원은 사용자가 직접 채움 → 자동 추가는 오류예방/개선 두 곳에만 */
+const FB_CORE_KIND=[["오류",/오류|예방|대응|QA/i],["개선",/개선/]];
+const FB_CORE_MANUAL=/고객|사용지원|행정/;
+function fbCoreKind(t){
+  return /QA|라이브|LIVE|배포|오류|에러|핫픽스|점검|테스트|검토/i.test(t.name)?"오류":"개선";
+}
+/* 보고서(핵심역량 → 성장, 육성 → KPI → 개선점)에서 업무가 들어간 줄 찾기.
+   업무명이 통째로 있거나, 업무명의 주요 단어(2글자 이상) 60% 이상이 한 줄에 있으면 반영된 걸로 봄 → 문장을 다듬어도 인식 */
+const FB_FIND_ORDER=["core","growth","kpi","improve"];
+const fbToks=s=>(s||"").toLowerCase().split(/[\s,.·()[\]\/~\-→:;'"<>|+=*#&]+/).filter(w=>w.length>=2);
+function fbFind(fb,nm){
+  const toks=[...new Set(fbToks(nm))], low=nm.toLowerCase();
+  let best=null;
+  FB_FIND_ORDER.forEach(f=>{ (fb[f]||"").split("\n").forEach((l,i)=>{
+    const s=l.toLowerCase(); if(!s.trim()||/^\s*\d+\)\s*/.test(l)) return;
+    const score=s.includes(low)?2:(toks.length?toks.filter(w=>s.includes(w)).length/toks.length:0);
+    if(score>=(toks.length<=1?1:0.6) && (!best||score>best.score)) best={f,i,score};
+  }); });
+  if(!best) return null;
+  const L=fb[best.f].split("\n"); let h="";
+  for(let j=best.i;j>=0;j--){ const m=L[j].match(/^\s*(\d+\)\s*.+?)\s*$/); if(m){ h=m[1]; break; } }
+  const lbl=(FB_SECTIONS.find(([x])=>x===best.f)||[,""])[1];
+  return {...best, where:best.f==="core"&&h?h:lbl+(h?` · ${h}`:"")};
+}
+/* ★핵심업무 목록: 각 업무가 보고서에 들어갔는지 (✓ 위치 / ✓ 직접 확인 / ⚠ 빠짐) */
+function fbHlHtml(hl,fb){
+  if(!hl.length) return `<h3>★ 핵심업무</h3><p class="muted small">업무DB에서 히스토리를 켜면 여기에 모여요.</p>`;
+  const ok=fb.coreOk||{}, live=hl.filter(t=>t.status!=="취소");
+  const rows=hl.map(t=>{ const nm=cleanName(t), cx=t.status==="취소";
+    const hit=!cx&&fbFind(fb,nm), man=!cx&&!hit&&ok[t.id];
+    const tag=cx?`<span class="muted small">취소</span>`
+      :hit?`<span class="fb-where">✓ ${esc(hit.where)}</span>`
+      :man?`<span class="fb-where man">✓ 직접 확인</span> <button type="button" class="linkbtn fb-unok" data-unok="${t.id}">취소</button>`
+      :`<span class="fb-miss">⚠ 빠짐</span> <button type="button" class="btn btn-xs" data-readd="${t.id}">다시 넣기</button> <button type="button" class="btn btn-xs" data-ok="${t.id}" title="표현을 바꿔서 썼다면 반영한 걸로 표시해요">반영함</button>`;
+    return `<li class="${hit?"fb-go":""}${hit&&S.fbFocus===t.id?" on":""}${!cx&&!hit&&!man?" miss":""}" ${hit?`data-go="${t.id}" title="눌러서 보고서에서 위치 보기 · 한 번 더 누르면 끄기"`:""}>${esc(t.name)} <span class="muted small">${md(t.start)}</span> ${tag}</li>`; }).join("");
+  const n=live.filter(t=>fbFind(fb,cleanName(t))||ok[t.id]).length;
+  return `<h3>★ 핵심업무 <span class="fb-cov ${n<live.length?"bad":""}">보고서 반영 ${n}/${live.length}</span></h3>
+    <p class="muted small" style="margin:-2px 0 6px">새 핵심업무는 핵심역량(오류예방·개선)에 자동으로 들어가요. 누르면 위치를 보여줘요.</p>
+    <ul class="hl-list">${rows}</ul>`;
+}
+function fbCoreInsert(text,tpl,adds){ /* adds = [{kind, line}] */
+  const parse=s=>{ const L=s.split("\n"), hs=[]; L.forEach((l,i)=>{ const m=l.match(/^\s*\d+\)\s*(.+?)\s*$/); if(m) hs.push({i,title:m[1]}); }); return {L,hs}; };
+  let {L,hs}=parse(text);
+  if(!hs.length){ /* 제목 없는 칸 → 기존 글 아래에 양식 제목을 붙여서 사용 */
+    const base=text.trimEnd(); ({L,hs}=parse((base?base+"\n\n":"")+tpl)); if(!hs.length) return text+(text.trim()?"\n":"")+adds.map(a=>a.line).join("\n"); }
+  const secOf=kind=>{ const re=FB_CORE_KIND.find(([k])=>k===kind)[1];
+    const free=hs.filter(x=>!FB_CORE_MANUAL.test(x.title));
+    return free.find(x=>re.test(x.title))||free.find(x=>/개선/.test(x.title))||free[free.length-1]||hs[hs.length-1]; };
+  const bucket=new Map(); adds.forEach(a=>{ const h=secOf(a.kind); if(!bucket.has(h)) bucket.set(h,[]); bucket.get(h).push(a.line); });
+  /* 아래 섹션부터 넣어야 앞 줄 번호가 안 밀림 */
+  [...bucket.keys()].sort((a,b)=>b.i-a.i).forEach(h=>{
+    const lines=bucket.get(h), end=(hs.find(x=>x.i>h.i)||{i:L.length}).i;
+    const blank=L.slice(h.i+1,end).findIndex(l=>/^\s*-\s*$/.test(l));
+    if(blank>=0){ L.splice(h.i+1+blank,1,...lines); return; }
+    let last=end-1; while(last>h.i && !L[last].trim()) last--;
+    if(last===h.i){ L.splice(h.i+1,0,"",...lines); return; }
+    L.splice(last+1,0,...lines);
+  });
+  return L.join("\n");
+}
+function fbAutoCore(k,fb,hl){
+  if(!S.fbLoaded || k<"2026-11") return false; /* 이미 제출한 지난 피드백(10월 이전)은 건드리지 않음 */
+  const done=new Set(fb.coreAdded||[]), cur=fb.core||"";
+  const has=nm=>!!fbFind(fb,nm); /* 보고서 어디든 이미 있으면 넣지 않음 */
+  const todo=hl.filter(t=>t.status!=="취소"&&!done.has(t.id));
+  if(!todo.length) return false;
+  const adds=todo.filter(t=>!has(cleanName(t))).map(t=>({kind:fbCoreKind(t),line:`- ${cleanName(t)}${t.status&&t.status!=="완료"?` (${t.status})`:""}`}));
+  if(adds.length) fb.core=fbCoreInsert(fbNorm(cur)?cur:fbTpl("core",k),fbTpl("core",k),adds);
+  fb.coreAdded=[...done,...todo.map(t=>t.id)];
+  saveFbSoon(); return true;
+}
 function rFeedback(){
   const ms=months().filter(k=>k!=="nodate"); if(!S.fbMonth) S.fbMonth=ym(new Date());
   const k=S.fbMonth, fb=(S.feedback.months[k] ||= {kpi:"",core:"",growth:"",improve:"",boss:""});
@@ -2173,6 +2268,7 @@ function rFeedback(){
   if(S.fbLoaded && !S.feedback.tplV2){ Object.values(S.feedback.months).forEach(f=>{ if(f.kpiFrom){ f.kpi=""; delete f.kpiFrom; } }); S.feedback.tplV2=1; saveFbSoon(); }
   const useTpl=f=>(f==="kpi"||f==="core") && !fbNorm(fb[f]);
   const hl=ts.filter(t=>t.hist), cancel=ts.filter(t=>t.status==="취소");
+  fbAutoCore(k,fb,hl);
   $("#view").innerHTML=`<section class="sheet">
    <div class="sheet-head"><h2>월별 피드백</h2><button class="btn btn-main" id="cp1">${mLabel(k)} 보고서 복사</button><button class="btn" id="cpall">전체 월 복사</button><button class="btn" id="fb-draft">업무DB로 초안 만들기</button></div>
    <div class="mchips" style="margin-bottom:16px">${ms.map(m=>{ const f=S.feedback.months[m]; const has=f&&FB_FIELDS.some(([x])=>f[x]); return `<button class="mchip ${has?"has":""}" aria-pressed="${m===k}" data-m="${m}">${mLabel(m)}</button>`; }).join("")}</div>
@@ -2181,13 +2277,12 @@ function rFeedback(){
      <div class="card" style="margin-bottom:12px"><h3>${mLabel(k)}에 한 일</h3>
       <div class="mstats" style="margin:0 0 8px"><span><b>${ts.length}</b>업무</span><span><b>${ts.filter(t=>t.status==="완료").length}</b>완료</span><span><b>${ts.filter(t=>kindOf(t)==="지시").length}</b>지시</span><span><b>${cancel.length}</b>취소</span></div>
       ${hbars([...CATS].map(c=>[c,ts.filter(t=>t.cat===c).length,CAT_COLOR[c]]),ts.length)}</div>
-     <div class="card" style="margin-bottom:12px"><h3>★ 핵심업무 <span class="muted small">(히스토리 표시)</span></h3>
-      ${hl.length?`<ul class="hl-list">${hl.map(t=>`<li>${esc(t.name)} <span class="muted small">${md(t.start)}</span></li>`).join("")}</ul>`:`<p class="muted small">업무DB에서 히스토리를 켜면 여기에 모여요.</p>`}</div>
+     <div class="card" id="fb-hl" style="margin-bottom:12px">${fbHlHtml(hl,fb)}</div>
      ${cancel.length?`<div class="card"><h3>취소된 업무</h3><ul class="hl-list">${cancel.map(t=>`<li>${esc(t.name)}</li>`).join("")}</ul></div>`:""}
     </div>
     <div>
      ${fb.draft?`<div class="draft"><span>업무DB를 보고 채운 <b>초안</b>이에요. 실제 제출한 내용으로 바꾼 뒤 표시를 지워 주세요.</span><button class="btn" id="undraft">초안 표시 지우기</button></div>`:""}
-     ${FB_SECTIONS.map(([f,l,h])=>`<div class="fb-sec"><label class="fb-h" for="fb-${f}">${l}<small>${h}</small>${f==="kpi"||f==="core"?`<span class="fb-acts">${f==="kpi"&&k>="2026-11"&&prev&&(prev.kpi||"").trim()?`<button type="button" class="btn btn-xs kpi-copy" id="kpi-copy">전월 KPI 다시 불러오기</button>`:""}<button type="button" class="btn btn-xs tpl-save" data-tpl="${f}" title="지금 칸의 내용을 ${l} 기본 설정으로 저장해요. ${mLabel(nextYm(k))}부터 이 양식으로 시작해요.">설정 저장</button></span>`:""}</label>${f==="kpi"&&fb.kpiFrom?`<div class="kpi-note">${mLabel(fb.kpiFrom)} KPI 양식을 그대로 가져왔어요. 숫자만 이번 달 기준으로 고쳐 주세요.</div>`:""}<textarea class="fb-ta" id="fb-${f}" data-f="${f}" placeholder="${h}">${esc(useTpl(f)?fbTpl(f,k):(fb[f]||""))}</textarea></div>`).join("")}
+     ${FB_SECTIONS.map(([f,l,h])=>`<div class="fb-sec"><label class="fb-h" for="fb-${f}">${l}<small>${h}</small>${f==="kpi"||f==="core"?`<span class="fb-acts">${f==="kpi"&&k>="2026-11"&&prev&&(prev.kpi||"").trim()?`<button type="button" class="btn btn-xs kpi-copy" id="kpi-copy">전월 KPI 다시 불러오기</button>`:""}<button type="button" class="btn btn-xs tpl-save" data-tpl="${f}" title="지금 칸의 내용을 ${l} 기본 설정으로 저장해요. ${mLabel(nextYm(k))}부터 이 양식으로 시작해요.">설정 저장</button></span>`:""}</label>${f==="kpi"&&fb.kpiFrom?`<div class="kpi-note">${mLabel(fb.kpiFrom)} KPI 양식을 그대로 가져왔어요. 숫자만 이번 달 기준으로 고쳐 주세요.</div>`:""}<div class="fb-wrap" data-wrap="${f}"><div class="fb-mirror" aria-hidden="true"></div><span class="fb-badge" hidden>✓ 핵심업무</span><textarea class="fb-ta" id="fb-${f}" data-f="${f}" placeholder="${h}">${esc(useTpl(f)?fbTpl(f,k):(fb[f]||""))}</textarea></div></div>`).join("")}
      <hr class="fb-hr">
      <div class="fb-sec boss"><label class="fb-h" for="fb-boss">받은 피드백<small>리더·동료에게 받은 피드백</small></label><textarea class="fb-ta" id="fb-boss" data-f="boss" placeholder="받은 피드백을 붙여넣으세요">${esc(fb.boss||"")}</textarea></div>
      <p class="muted small" style="margin:8px 0 0">입력하면 자동으로 저장돼요.</p>
@@ -2197,7 +2292,34 @@ function rFeedback(){
     <div class="card"><h3>지난달(${prevK?mLabel(prevK):"–"}) 받은 피드백</h3><pre>${esc(prev?.boss||"기록 없음")}</pre></div>
     <div class="card"><h3>이번 달 개선점</h3><pre>${esc(fb.improve||"아직 적지 않았어요")}</pre></div>
    </div></section>`;
-  $("#view").querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{S.fbMonth=b.dataset.m;render();});
+  /* 핵심업무 클릭 → 보고서에서 그 줄을 형광 깜빡 + ✓ 배지. 한 번 더 누르면 끔. 입력할 때마다 반영 여부·위치 다시 계산 */
+  const hlBox=$("#fb-hl");
+  const markFocus=(scroll,blink)=>{
+    const t=S.fbFocus&&hl.find(x=>x.id===S.fbFocus), hit=t&&fbFind(fb,cleanName(t));
+    $("#view").querySelectorAll("[data-wrap]").forEach(w=>{
+      const on=hit&&w.dataset.wrap===hit.f, mir=w.querySelector(".fb-mirror"), badge=w.querySelector(".fb-badge");
+      w.classList.toggle("marking",!!on); badge.hidden=!on;
+      if(!on){ mir.innerHTML=""; return; }
+      const L=w.querySelector("textarea").value.split("\n");
+      mir.innerHTML=L.map((l,j)=>j===hit.i?`<mark class="fb-mark${blink?"":" still"}">${esc(l)||" "}</mark>`:esc(l)).join("\n")+"\n";
+      const m=mir.querySelector("mark"); badge.style.top=(m.offsetTop+3)+"px";
+      if(scroll) m.scrollIntoView({block:"center",behavior:"smooth"});
+    });
+  };
+  const drawHl=()=>{ hlBox.innerHTML=fbHlHtml(hl,fb); };
+  if(S.fbFocus) markFocus(false,false);
+  hlBox.onclick=e=>{
+    const go=e.target.closest("[data-go]"), rd=e.target.closest("[data-readd]"), okb=e.target.closest("[data-ok]"), un=e.target.closest("[data-unok]");
+    if(rd){ const t=hl.find(x=>x.id===rd.dataset.readd); if(!t) return;
+      const tpl=fbTpl("core",k), cur=$("#fb-core").value;
+      fb.core=fbCoreInsert(fbNorm(cur)?cur:tpl,tpl,[{kind:fbCoreKind(t),line:`- ${cleanName(t)}${t.status&&t.status!=="완료"?` (${t.status})`:""}`}]);
+      fb.coreAdded=[...new Set([...(fb.coreAdded||[]),t.id])]; S.fbFocus=t.id; saveFbSoon(); render(); toast("핵심역량에 다시 넣었어요."); return; }
+    if(okb){ fb.coreOk={...(fb.coreOk||{}),[okb.dataset.ok]:true}; saveFbSoon(); drawHl(); return; }
+    if(un){ const o={...(fb.coreOk||{})}; delete o[un.dataset.unok]; fb.coreOk=o; saveFbSoon(); drawHl(); return; }
+    if(go){ S.fbFocus=S.fbFocus===go.dataset.go?null:go.dataset.go; drawHl(); markFocus(true,true); }
+  };
+  $("#view").querySelectorAll("[data-wrap] textarea").forEach(ta=>ta.addEventListener("input",()=>setTimeout(()=>{ drawHl(); if(S.fbFocus) markFocus(false,false); },0)));
+  $("#view").querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{S.fbMonth=b.dataset.m;S.fbFocus=null;render();});
   $("#cp1").onclick=()=>copyText(fbReport(k),`${mLabel(k)} 보고서를`);
   $("#fb-draft").onclick=()=>fbDraftDlg(k,fb);
   const kc=$("#kpi-copy"); if(kc) kc.onclick=()=>{ if(kc.dataset.armed||!(fb.kpi||"").trim()||fb.kpi===prev.kpi){ fb.kpi=prev.kpi; fb.kpiFrom=prevK; saveFbSoon(); render(); } else { kc.dataset.armed=1; kc.textContent="지금 KPI 내용을 덮어써요 · 한 번 더"; } };
