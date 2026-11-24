@@ -633,6 +633,8 @@ svg text{fill:var(--ink-2);font-size:11px;font-family:var(--f-ui)}
 .hl-list li .btn-xs{font-size:11px;padding:0 6px;vertical-align:1px}
 .fb-where.man{color:var(--ink-2);background:var(--paper-2)}
 .fb-unok{font-size:11px}
+.hl-list li.skip{color:var(--ink-3)}
+.fb-skip{display:inline-block;font-size:11px;font-weight:600;color:var(--ink-2);background:var(--paper-2);border:1px solid var(--line);border-radius:99px;padding:0 7px;line-height:1.5}
 .fb-go{cursor:pointer;border-radius:6px;padding:0 4px;margin-left:-4px}
 .fb-go:hover{background:var(--paper-2)}
 .fb-go.on{background:var(--today);font-weight:600}
@@ -2214,14 +2216,15 @@ function fbFind(fb,nm){
 /* ★핵심업무 목록: 각 업무가 보고서에 들어갔는지 (✓ 위치 / ✓ 직접 확인 / ⚠ 빠짐) */
 function fbHlHtml(hl,fb){
   if(!hl.length) return `<h3>★ 핵심업무</h3><p class="muted small">업무DB에서 히스토리를 켜면 여기에 모여요.</p>`;
-  const ok=fb.coreOk||{}, live=hl.filter(t=>t.status!=="취소");
-  const rows=hl.map(t=>{ const nm=cleanName(t), cx=t.status==="취소";
-    const hit=!cx&&fbFind(fb,nm), man=!cx&&!hit&&ok[t.id];
+  const ok=fb.coreOk||{}, skip=fb.coreSkip||{}, live=hl.filter(t=>t.status!=="취소"&&!skip[t.id]);
+  const rows=hl.map(t=>{ const nm=cleanName(t), cx=t.status==="취소", sk=!cx&&skip[t.id];
+    const hit=!cx&&!sk&&fbFind(fb,nm), man=!cx&&!sk&&!hit&&ok[t.id];
     const tag=cx?`<span class="muted small">취소</span>`
+      :sk?`<span class="fb-skip">제외</span> <button type="button" class="linkbtn fb-unok" data-unskip="${t.id}">취소</button>`
       :hit?`<span class="fb-where">✓ ${esc(hit.where)}</span>`
       :man?`<span class="fb-where man">✓ 직접 확인</span> <button type="button" class="linkbtn fb-unok" data-unok="${t.id}">취소</button>`
-      :`<span class="fb-miss">⚠ 빠짐</span> <button type="button" class="btn btn-xs" data-readd="${t.id}">다시 넣기</button> <button type="button" class="btn btn-xs" data-ok="${t.id}" title="표현을 바꿔서 썼다면 반영한 걸로 표시해요">반영함</button>`;
-    return `<li class="${hit?"fb-go":""}${hit&&S.fbFocus===t.id?" on":""}${!cx&&!hit&&!man?" miss":""}" ${hit?`data-go="${t.id}" title="눌러서 보고서에서 위치 보기 · 한 번 더 누르면 끄기"`:""}>${esc(t.name)} <span class="muted small">${md(t.start)}</span> ${tag}</li>`; }).join("");
+      :`<span class="fb-miss">⚠ 빠짐</span> <button type="button" class="btn btn-xs" data-readd="${t.id}">다시 넣기</button> <button type="button" class="btn btn-xs" data-ok="${t.id}" title="표현을 바꿔서 썼다면 반영한 걸로 표시해요">반영함</button> <button type="button" class="btn btn-xs" data-skip="${t.id}" title="보고서에 넣지 않을 업무 — 반영 개수에서 빠져요">제외</button>`;
+    return `<li class="${hit?"fb-go":""}${hit&&S.fbFocus===t.id?" on":""}${sk?" skip":""}${!cx&&!sk&&!hit&&!man?" miss":""}" ${hit?`data-go="${t.id}" title="눌러서 보고서에서 위치 보기 · 한 번 더 누르면 끄기"`:""}>${esc(t.name)} <span class="muted small">${md(t.start)}</span> ${tag}</li>`; }).join("");
   const n=live.filter(t=>fbFind(fb,cleanName(t))||ok[t.id]).length;
   return `<h3>★ 핵심업무 <span class="fb-cov ${n<live.length?"bad":""}">보고서 반영 ${n}/${live.length}</span></h3>
     <p class="muted small" style="margin:-2px 0 6px">새 핵심업무는 핵심역량(오류예방·개선)에 자동으로 들어가요. 누르면 위치를 보여줘요.</p>
@@ -2251,7 +2254,7 @@ function fbAutoCore(k,fb,hl){
   if(!S.fbLoaded || k<"2026-11") return false; /* 이미 제출한 지난 피드백(10월 이전)은 건드리지 않음 */
   const done=new Set(fb.coreAdded||[]), cur=fb.core||"";
   const has=nm=>!!fbFind(fb,nm); /* 보고서 어디든 이미 있으면 넣지 않음 */
-  const todo=hl.filter(t=>t.status!=="취소"&&!done.has(t.id));
+  const todo=hl.filter(t=>t.status!=="취소"&&!done.has(t.id)&&!(fb.coreSkip||{})[t.id]);
   if(!todo.length) return false;
   const adds=todo.filter(t=>!has(cleanName(t))).map(t=>({kind:fbCoreKind(t),line:`- ${cleanName(t)}${t.status&&t.status!=="완료"?` (${t.status})`:""}`}));
   if(adds.length) fb.core=fbCoreInsert(fbNorm(cur)?cur:fbTpl("core",k),fbTpl("core",k),adds);
@@ -2316,6 +2319,9 @@ function rFeedback(){
       fb.coreAdded=[...new Set([...(fb.coreAdded||[]),t.id])]; S.fbFocus=t.id; saveFbSoon(); render(); toast("핵심역량에 다시 넣었어요."); return; }
     if(okb){ fb.coreOk={...(fb.coreOk||{}),[okb.dataset.ok]:true}; saveFbSoon(); drawHl(); return; }
     if(un){ const o={...(fb.coreOk||{})}; delete o[un.dataset.unok]; fb.coreOk=o; saveFbSoon(); drawHl(); return; }
+    const sk=e.target.closest("[data-skip]"), usk=e.target.closest("[data-unskip]");
+    if(sk){ fb.coreSkip={...(fb.coreSkip||{}),[sk.dataset.skip]:true}; saveFbSoon(); drawHl(); return; }
+    if(usk){ const o={...(fb.coreSkip||{})}; delete o[usk.dataset.unskip]; fb.coreSkip=o; saveFbSoon(); drawHl(); return; }
     if(go){ S.fbFocus=S.fbFocus===go.dataset.go?null:go.dataset.go; drawHl(); markFocus(true,true); }
   };
   $("#view").querySelectorAll("[data-wrap] textarea").forEach(ta=>ta.addEventListener("input",()=>setTimeout(()=>{ drawHl(); if(S.fbFocus) markFocus(false,false); },0)));
