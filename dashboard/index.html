@@ -224,7 +224,7 @@ section{margin-top:26px}
   function render(d){
     document.title = (d.title || '부업 비서실') + ' · ' + (d.channel || '');
     if (d.channel) document.getElementById('channel').textContent = d.channel;
-    if (d.updated_label) document.getElementById('updated').textContent = d.updated_label + ' 기준 스냅샷';
+    if (d.updated_label) document.getElementById('updated').textContent = d.updated_label + ' 스냅샷';
     document.getElementById('notice').textContent = d.notice || '';
     var f = d.footer || {};
     document.getElementById('foot').innerHTML =
