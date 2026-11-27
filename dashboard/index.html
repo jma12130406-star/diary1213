@@ -58,6 +58,10 @@ a:hover{text-decoration:underline}
 h1{font-size:clamp(24px,6vw,32px);line-height:1.2;margin:2px 0 0;letter-spacing:-.035em}
 h1 .sub{display:block;font-size:14px;font-weight:600;color:var(--ink-2);letter-spacing:-.01em;margin-top:6px}
 .meta{font-size:12.5px;color:var(--ink-3)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink-2);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 11px;box-shadow:0 1px 2px rgba(70,40,70,.04)}
+.chip:hover{text-decoration:none;border-color:var(--pink-2);color:var(--pink)}
+.chip.quiet{color:var(--ink-3);background:transparent;box-shadow:none}
 
 /* ── section ── */
 section{margin-top:26px}
@@ -159,6 +163,10 @@ section{margin-top:26px}
     <span class="eyebrow">🌷 side income desk</span>
     <h1>부업 비서실<span class="sub" id="channel">엠또의 먹고 사는 법</span></h1>
     <div class="meta" id="updated">불러오는 중…</div>
+    <div class="chips">
+      <a class="chip" href="https://www.threads.com/@hi.jangc" target="_blank" rel="noopener">🧵 쓰레드 @hi.jangc</a>
+      <span class="chip quiet">🛍 쿠파스 채널 hijangc1</span>
+    </div>
   </header>
 
   <main id="app">
@@ -216,7 +224,7 @@ section{margin-top:26px}
   function render(d){
     document.title = (d.title || '부업 비서실') + ' · ' + (d.channel || '');
     if (d.channel) document.getElementById('channel').textContent = d.channel;
-    if (d.updated_label) document.getElementById('updated').textContent = d.updated_label + ' · 매일 아침 자동 갱신';
+    if (d.updated_label) document.getElementById('updated').textContent = d.updated_label + ' 기준 스냅샷';
     document.getElementById('notice').textContent = d.notice || '';
     var f = d.footer || {};
     document.getElementById('foot').innerHTML =

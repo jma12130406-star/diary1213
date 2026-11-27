@@ -147,7 +147,7 @@
     }
   ],
   "footer": {
-    "source": "매일 07:00 블로그·스레드 루틴, 08:00 실적 브리핑 결과를 반영해 갱신합니다.",
+    "source": "표시된 기준 시각의 스냅샷입니다. 값이 바뀌면 data/dashboard.json만 고치면 바로 반영됩니다.",
     "updated_from": "GitHub jma12130406-star/diary1213 · dashboard"
   }
 }
